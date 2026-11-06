@@ -166,7 +166,7 @@ app.post('/api/solicitar-saque', async (req, res) => {
 
         if (saldoDisponivel < minimoSaque) {
             await client.query('ROLLBACK');
-            return.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
+            return res.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
         }
 
         await client.query(
@@ -273,8 +273,8 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                     await client.query(
                         `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
                          VALUES ('cashrain', $1, 'indicacao_n2', CAST($2 AS NUMERIC), 'Comissão Nível 2', $3 || '_n2', NOW())`,
-                        [emailN2, comissao2, viewId.toString()]
-                    );
+                    [emailN2, comissao2, viewId.toString()]
+                );
 
                     // Nível 3 (2%)
                     const resN3 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN2]);
