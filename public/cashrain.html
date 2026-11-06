@@ -37,33 +37,51 @@
         /* Conteúdo Principal / Embed */
         main { flex: 1; padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
 
-        /* Box de Login (Exibido se não estiver logado) */
+        /* Box de Login */
         .auth-box {
             background: var(--card-bg);
-            padding: 25px;
+            padding: 30px;
             border-radius: 12px;
             text-align: center;
             border: 1px solid #334155;
+            max-width: 500px;
+            margin: 40px auto;
+            width: 100%;
         }
         .auth-box input {
-            padding: 12px; width: 80%; max-width: 350px; border-radius: 8px; border: 1px solid #475569;
-            background: #0f172a; color: #fff; margin-bottom: 12px; font-size: 1rem; text-align: center;
+            padding: 12px; width: 90%; max-width: 380px; border-radius: 8px; border: 1px solid #475569;
+            background: #0f172a; color: #fff; margin-bottom: 15px; font-size: 1rem; text-align: center;
         }
 
         /* Iframe / Embed Container */
         .embed-container {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 10px;
+            padding: 15px;
             border: 1px solid #334155;
-            min-height: 450px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            gap: 15px;
         }
-        iframe { width: 100%; height: 450px; border: none; border-radius: 8px; }
+        iframe { width: 100%; height: 500px; border: none; border-radius: 8px; }
 
-        /* Rodapé de Cross-Promotion (Divulgação dos outros bots) */
+        /* Caixa de Indicação */
+        .ref-box-container {
+            background: #0f172a;
+            border: 1px dashed #475569;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        .ref-box-container h4 { color: var(--accent); margin-bottom: 5px; font-size: 0.95rem; }
+        .ref-input-group { display: flex; gap: 8px; margin-top: 8px; }
+        .ref-input-group input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 0.85rem; }
+        .btn-copiar { background: #334155; color: #fff; border: none; padding: 0 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-copiar:hover { background: #475569; }
+
+        /* Rodapé de Cross-Promotion */
         .cross-promo { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: auto; }
         .promo-card { background: var(--card-bg); padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; color: var(--text-main); border: 1px solid #334155; }
         .promo-card:hover { border-color: var(--accent); }
@@ -91,13 +109,23 @@
             <button class="btn-saque" onclick="fazerLogin()">Entrar / Começar</button>
         </div>
 
-        <!-- EMBED MONEYRAIN -->
+        <!-- EMBED MONEYRAIN & PAINEL DE INDICAÇÃO -->
         <div id="embed-section" class="embed-container" style="display: none;">
-            <!-- Substitua a URL abaixo pela URL do seu parceiro / MoneyRain / Offerwall -->
-            <iframe id="moneyrain-iframe" src="about:blank"></iframe>
+            <!-- Iframe oficial do MoneyRain integrando o e-mail do usuário no uid -->
+            <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
+
+            <!-- Área de Indicação do Usuário -->
+            <div class="ref-box-container" style="width: 100%;">
+                <h4>🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Compartilhe com amigos e ganhe comissão sobre as tarefas deles!</p>
+                <div class="ref-input-group">
+                    <input type="text" id="user-ref-link" readonly>
+                    <button class="btn-copiar" onclick="copiarLink()">Copiar</button>
+                </div>
+            </div>
         </div>
 
-        <!-- BANNERS DE CROSS-PROMOTION (OUTROS BOTS) -->
+        <!-- BANNERS DE CROSS-PROMOTION -->
         <div class="cross-promo">
             <a href="/faucet" class="promo-card">
                 🪙 Faucet Web
@@ -117,19 +145,45 @@
     <script>
         let currentUserEmail = localStorage.getItem('cashrain_email');
 
-        // Carrega sessão ao abrir a página
+        // Captura o ?ref= da URL ao entrar no site e guarda no localStorage
+        const urlParams = new URLSearchParams(window.location.search);
+        const refUrl = urlParams.get('ref');
+        if (refUrl) {
+            localStorage.setItem('cashrain_indicado_por', refUrl);
+        }
+
+        // Carrega sessão ao abrir a página se já estiver logado
         if (currentUserEmail) {
             iniciarSessao(currentUserEmail);
         }
 
-        function fazerLogin() {
+        async function fazerLogin() {
             const email = document.getElementById('fp-email').value.trim();
             if (!email || !email.includes('@')) {
                 alert('Por favor, insira um e-mail válido da FaucetPay.');
                 return;
             }
-            localStorage.setItem('cashrain_email', email);
-            iniciarSessao(email);
+
+            const indicadoPor = localStorage.getItem('cashrain_indicado_por') || null;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projeto: 'cashrain', email: email, indicado_por: indicadoPor })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('cashrain_email', email);
+                    iniciarSessao(email);
+                } else {
+                    alert(data.message || 'Erro ao realizar login.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro de conexão ao tentar entrar.');
+            }
         }
 
         function iniciarSessao(email) {
@@ -137,10 +191,24 @@
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('embed-section').style.display = 'flex';
             
-            // Define o embed do MoneyRain (passando o e-mail como sub_id na URL se a rede permitir)
-            document.getElementById('moneyrain-iframe').src = `https://seusite-moneyrain.com/embed?user=${encodeURIComponent(email)}`;
+            // Atribui o iframe oficial do MoneyRain com o e-mail do usuário no uid
+            const iframeUrl = `https://offerwall.moneyrain.top/embed.php?pub=228&site=cash-tzgk.onrender.com&uid=${encodeURIComponent(email)}`;
+            document.getElementById('moneyrain-iframe').src = iframeUrl;
+
+            // Gera o link de indicação personalizado do usuário
+            const meuLinkRef = `${window.location.origin}/cashrain?ref=${encodeURIComponent(email)}`;
+            document.getElementById('user-ref-link').value = meuLinkRef;
 
             atualizarSaldo();
+            setInterval(atualizarSaldo, 15000); // Atualiza o saldo a cada 15 segundos
+        }
+
+        function copiarLink() {
+            const inputLink = document.getElementById('user-ref-link');
+            inputLink.select();
+            inputLink.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(inputLink.value);
+            alert('Link de indicação copiado com sucesso!');
         }
 
         async function atualizarSaldo() {
@@ -160,7 +228,7 @@
                 return;
             }
 
-            const confirmacao = confirm(`Deseja solicitar o saque do seu saldo para o e-mail ${currentUserEmail}?`);
+            const confirmacao = confirm(`Deseja solicitar o saque de todo o seu saldo disponível para o e-mail FaucetPay: ${currentUserEmail}?`);
             if (!confirmacao) return;
 
             try {
