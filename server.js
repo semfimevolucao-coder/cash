@@ -6,7 +6,20 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SECRET = process.env.MONEYRAIN_SECRET 
+const SECRET = process.env.MONEYRAIN_SECRET
+
+// Função auxiliar para normalizar e-mails (evita conflitos com pontos do Gmail e maiúsculas)
+function normalizarEmail(email) {
+    if (!email) return '';
+    let limpo = email.trim().toLowerCase();
+    // Se for do Gmail, remove os pontos da parte local para unificar o cadastro
+    if (limpo.endsWith('@gmail.com') || limpo.endsWith('@googlemail.com')) {
+        let partes = limpo.split('@');
+        let usuario = partes[0].replace(/\./g, '');
+        return `${usuario}@${partes[1]}`;
+    }
+    return limpo;
+}
 
 // Middlewares
 app.use('/api/moneyrain-callback', express.raw({ type: 'application/json' }));
@@ -71,12 +84,15 @@ async function inicializarBanco() {
 // ==========================================
 app.get('/', (req, res) => res.redirect('/cashrain'));
 app.get('/cashrain', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cashrain.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 // ==========================================
 // REGISTRO / LOGIN COM INDICAÇÃO
 // ==========================================
 app.post('/api/login', async (req, res) => {
-    const { projeto, email, indicado_por } = req.body;
+    const projeto = req.body.projeto;
+    const email = normalizarEmail(req.body.email);
+    const indicado_por = normalizarEmail(req.body.indicado_por);
 
     if (!projeto || !email) {
         return res.status(400).json({ success: false, message: 'Dados incompletos.' });
@@ -105,7 +121,9 @@ app.post('/api/login', async (req, res) => {
 // CONSULTA DE SALDO
 // ==========================================
 app.get('/api/saldo', async (req, res) => {
-    const { projeto, email } = req.query;
+    const projeto = req.query.projeto;
+    const email = normalizarEmail(req.query.email);
+
     if (!projeto || !email) {
         return res.status(400).json({ error: 'Projeto e e-mail são obrigatórios.' });
     }
@@ -122,7 +140,7 @@ app.get('/api/saldo', async (req, res) => {
 
         const totalGanho = parseFloat(resGanhos.rows[0].total);
         const totalSacado = parseFloat(resSaques.rows[0].total);
-        const saldoDisponivel = (totalGanho - totalSacado).toFixed(8);
+        const saldoDisponivel = Math.max(0, totalGanho - totalSacado).toFixed(8);
 
         res.json({ 
             saldo: saldoDisponivel,
@@ -139,8 +157,9 @@ app.get('/api/saldo', async (req, res) => {
 // SOLICITAÇÃO DE SAQUE (PENDENTE / WAITING)
 // ==========================================
 app.post('/api/solicitar-saque', async (req, res) => {
-    const { projeto, email, chave_pix_faucetpay } = req.body;
-    const destino = chave_pix_faucetpay || email;
+    const projeto = req.body.projeto;
+    const email = normalizarEmail(req.body.email);
+    const destino = normalizarEmail(req.body.chave_pix_faucetpay || email);
 
     if (!projeto || !destino) {
         return res.status(400).json({ success: false, message: 'Dados incompletos.' });
@@ -166,7 +185,7 @@ app.post('/api/solicitar-saque', async (req, res) => {
 
         if (saldoDisponivel < minimoSaque) {
             await client.query('ROLLBACK');
-            return res.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
+            return.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
         }
 
         await client.query(
@@ -221,7 +240,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
     }
 
     if (data.event === 'reward.completed') {
-        const emailUser = data.external_uid;
+        const emailUser = normalizarEmail(data.external_uid);
         const rewardAmount = parseFloat(data.reward_currency_amount || 0);
         const viewId = data.view_id;
         const adType = data.ad_type ? data.ad_type.toUpperCase() : "Ad";
@@ -254,7 +273,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
 
             // Nível 1 (5%)
             const resN1 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailUser]);
-            let emailN1 = resN1.rows.length > 0 ? resN1.rows[0].indicado_por : null;
+            let emailN1 = resN1.rows.length > 0 ? normalizarEmail(resN1.rows[0].indicado_por) : null;
 
             if (emailN1) {
                 const comissao1 = (rewardAmount * comissaoN1).toFixed(8);
@@ -266,19 +285,19 @@ app.post('/api/moneyrain-callback', async (req, res) => {
 
                 // Nível 2 (3%)
                 const resN2 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN1]);
-                let emailN2 = resN2.rows.length > 0 ? resN2.rows[0].indicado_por : null;
+                let emailN2 = resN2.rows.length > 0 ? normalizarEmail(resN2.rows[0].indicado_por) : null;
 
                 if (emailN2) {
                     const comissao2 = (rewardAmount * comissaoN2).toFixed(8);
                     await client.query(
                         `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
                          VALUES ('cashrain', $1, 'indicacao_n2', CAST($2 AS NUMERIC), 'Comissão Nível 2', $3 || '_n2', NOW())`,
-                    [emailN2, comissao2, viewId.toString()]
-                );
+                        [emailN2, comissao2, viewId.toString()]
+                    );
 
                     // Nível 3 (2%)
                     const resN3 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN2]);
-                    let emailN3 = resN3.rows.length > 0 ? resN3.rows[0].indicado_por : null;
+                    let emailN3 = resN3.rows.length > 0 ? normalizarEmail(resN3.rows[0].indicado_por) : null;
 
                     if (emailN3) {
                         const comissao3 = (rewardAmount * comissaoN3).toFixed(8);
@@ -312,8 +331,6 @@ app.post('/api/moneyrain-callback', async (req, res) => {
 // ==========================================
 app.post('/api/admin/sql', async (req, res) => {
     const { senha, query } = req.body;
-
-    // Defina sua senha de admin aqui ou via variável de ambiente no Render
     const ADMIN_SENHA = process.env.ADMIN_SENHA 
 
     if (senha !== ADMIN_SENHA) {
