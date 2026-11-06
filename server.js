@@ -185,7 +185,7 @@ app.post('/api/solicitar-saque', async (req, res) => {
 
         if (saldoDisponivel < minimoSaque) {
             await client.query('ROLLBACK');
-            return.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
+            return res.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
         }
 
         await client.query(
