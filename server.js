@@ -307,6 +307,36 @@ app.post('/api/moneyrain-callback', async (req, res) => {
     res.status(400).send('Invalid event');
 });
 
+// ==========================================
+// ROTA ADMIN PARA CONSULTAS E COMANDOS SQL
+// ==========================================
+app.post('/api/admin/sql', async (req, res) => {
+    const { senha, query } = req.body;
+
+    // Defina sua senha de admin aqui ou via variável de ambiente no Render
+    const ADMIN_SENHA = process.env.ADMIN_SENHA 
+
+    if (senha !== ADMIN_SENHA) {
+        return res.status(403).json({ success: false, message: 'Senha de administrador inválida.' });
+    }
+
+    if (!query || !query.trim()) {
+        return res.status(400).json({ success: false, message: 'Nenhuma query SQL foi enviada.' });
+    }
+
+    try {
+        const resultado = await pool.query(query);
+        res.json({
+            success: true,
+            rowCount: resultado.rowCount,
+            rows: resultado.rows
+        });
+    } catch (err) {
+        console.error('Erro ao executar query SQL:', err);
+        res.json({ success: false, error: err.message });
+    }
+});
+
 // Inicialização
 app.listen(PORT, async () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
