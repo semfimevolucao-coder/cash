@@ -6,13 +6,12 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SECRET = process.env.MONEYRAIN_SECRET
+const SECRET = process.env.MONEYRAIN_SECRET;
 
 // Função auxiliar para normalizar e-mails (evita conflitos com pontos do Gmail e maiúsculas)
 function normalizarEmail(email) {
     if (!email) return '';
     let limpo = email.trim().toLowerCase();
-    // Se for do Gmail, remove os pontos da parte local para unificar o cadastro
     if (limpo.endsWith('@gmail.com') || limpo.endsWith('@googlemail.com')) {
         let partes = limpo.split('@');
         let usuario = partes[0].replace(/\./g, '');
@@ -87,33 +86,45 @@ app.get('/cashrain', (req, res) => res.sendFile(path.join(__dirname, 'public', '
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 // ==========================================
-// REGISTRO / LOGIN COM INDICAÇÃO
+// REGISTRO / LOGIN COM ATUALIZAÇÃO DA ÁRVORE
 // ==========================================
 app.post('/api/login', async (req, res) => {
     const projeto = req.body.projeto;
     const email = normalizarEmail(req.body.email);
-    const indicado_por = normalizarEmail(req.body.indicado_por);
+    let indicado_por = normalizarEmail(req.body.indicado_por);
 
     if (!projeto || !email) {
         return res.status(400).json({ success: false, message: 'Dados incompletos.' });
     }
 
-    try {
-        let padrinho = indicado_por;
-        if (padrinho === email) padrinho = null;
+    if (indicado_por === email) indicado_por = null;
 
-        await pool.query(
+    // Se não veio indicação explícita e não é a conta raiz, joga para o Chenson por padrão
+    if (!indicado_por && email !== 'chensonbh763@gmail.com') {
+        indicado_por = 'chensonbh763@gmail.com';
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Insere ou atualiza o usuário, garantindo que o link de indicação seja atualizado caso ele entre por outro link
+        await client.query(
             `INSERT INTO usuarios (projeto, email, indicado_por) 
              VALUES ($1, $2, $3) 
              ON CONFLICT (projeto, email) 
-             DO UPDATE SET indicado_por = COALESCE(usuarios.indicado_por, EXCLUDED.indicado_por)`,
-            [projeto, email, padrinho]
+             DO UPDATE SET indicado_por = EXCLUDED.indicado_por`,
+            [projeto, email, indicado_por]
         );
 
-        res.json({ success: true, message: 'Login efetuado com sucesso!' });
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'Login e árvore atualizados com sucesso!' });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('Erro no login:', err);
         res.status(500).json({ success: false, message: 'Erro interno no login.' });
+    } finally {
+        client.release();
     }
 });
 
@@ -154,7 +165,7 @@ app.get('/api/saldo', async (req, res) => {
 });
 
 // ==========================================
-// SOLICITAÇÃO DE SAQUE (PENDENTE / WAITING)
+// SOLICITAÇÃO DE SAQUE
 // ==========================================
 app.post('/api/solicitar-saque', async (req, res) => {
     const projeto = req.body.projeto;
@@ -195,10 +206,7 @@ app.post('/api/solicitar-saque', async (req, res) => {
         );
 
         await client.query('COMMIT');
-        res.json({ 
-            success: true, 
-            message: 'Saque solicitado com sucesso! Aguardando pagamento manual.' 
-        });
+        res.json({ success: true, message: 'Saque solicitado com sucesso!' });
 
     } catch (err) {
         await client.query('ROLLBACK');
@@ -210,7 +218,7 @@ app.post('/api/solicitar-saque', async (req, res) => {
 });
 
 // ==========================================
-// CALLBACK MONEYRAIN COM 3 NÍVEIS E HMAC
+// CALLBACK MONEYRAIN COM ÁRVORE DINÂMICA EM 3 NÍVEIS
 // ==========================================
 app.post('/api/moneyrain-callback', async (req, res) => {
     const signature = req.headers['x-moneyrain-signature'];
@@ -263,7 +271,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                 return res.status(200).send('Already credited');
             }
 
-            // Credita 70% para o usuário
+            // 1. Credita 70% para o usuário principal da tarefa
             const ganhoLiquidoUsuario = (rewardAmount * percentualUsuario).toFixed(8);
             await client.query(
                 `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
@@ -271,9 +279,38 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                 [emailUser, ganhoLiquidoUsuario, nomeTarefa, viewId.toString()]
             );
 
-            // Nível 1 (5%)
-            const resN1 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailUser]);
-            let emailN1 = resN1.rows.length > 0 ? normalizarEmail(resN1.rows[0].indicado_por) : null;
+            // 2. Busca dinâmica e recursiva da árvore de uplines (N1, N2, N3) direto da tabela no momento do postback
+            const queryArvore = `
+                WITH RECURSIVE uplines AS (
+                    SELECT email, indicado_por, 1 AS nivel
+                    FROM usuarios
+                    WHERE email = $1 AND projeto = 'cashrain'
+                    
+                    UNION ALL
+                    
+                    SELECT u.email, u.indicado_por, uplines.nivel + 1
+                    FROM usuarios u
+                    JOIN uplines ON u.email = uplines.indicado_por
+                    WHERE uplines.nivel < 3 AND u.projeto = 'cashrain'
+                )
+                SELECT email, nivel FROM uplines WHERE nivel > 0;
+            `;
+
+            const resArvore = await client.query(queryArvore, [emailUser]);
+
+            // Mapeia os níveis encontrados na árvore atualizada
+            let emailN1 = null;
+            let emailN2 = null;
+            let emailN3 = null;
+
+            resArvore.rows.forEach(row => {
+                // A query retorna a cadeia a partir do usuário, então pegamos quem indicou
+                // Para simplificar, vamos buscar os pais diretos na tabela com base na hierarquia
+            });
+
+            // Abordagem direta e blindada para buscar N1, N2 e N3 em cadeia na tabela:
+            const userN1 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailUser]);
+            emailN1 = userN1.rows.length > 0 ? normalizarEmail(userN1.rows[0].indicado_por) : null;
 
             if (emailN1) {
                 const comissao1 = (rewardAmount * comissaoN1).toFixed(8);
@@ -283,9 +320,8 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                     [emailN1, comissao1, viewId.toString()]
                 );
 
-                // Nível 2 (3%)
-                const resN2 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN1]);
-                let emailN2 = resN2.rows.length > 0 ? normalizarEmail(resN2.rows[0].indicado_por) : null;
+                const userN2 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN1]);
+                emailN2 = userN2.rows.length > 0 ? normalizarEmail(userN2.rows[0].indicado_por) : null;
 
                 if (emailN2) {
                     const comissao2 = (rewardAmount * comissaoN2).toFixed(8);
@@ -295,9 +331,8 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                         [emailN2, comissao2, viewId.toString()]
                     );
 
-                    // Nível 3 (2%)
-                    const resN3 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN2]);
-                    let emailN3 = resN3.rows.length > 0 ? normalizarEmail(resN3.rows[0].indicado_por) : null;
+                    const userN3 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN2]);
+                    emailN3 = userN3.rows.length > 0 ? normalizarEmail(userN3.rows[0].indicado_por) : null;
 
                     if (emailN3) {
                         const comissao3 = (rewardAmount * comissaoN3).toFixed(8);
@@ -311,7 +346,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
             }
 
             await client.query('COMMIT');
-            console.log(`✅ MoneyRain Postback Sucesso! Usuário ${emailUser} creditado.`);
+            console.log(`✅ MoneyRain Postback Sucesso! Cadeia de comissões processada para ${emailUser}.`);
             return res.status(200).send('OK');
 
         } catch (dbErr) {
@@ -327,18 +362,18 @@ app.post('/api/moneyrain-callback', async (req, res) => {
 });
 
 // ==========================================
-// ROTA ADMIN PARA CONSULTAS E COMANDOS SQL
+// ROTA ADMIN PARA SQL
 // ==========================================
 app.post('/api/admin/sql', async (req, res) => {
     const { senha, query } = req.body;
-    const ADMIN_SENHA = process.env.ADMIN_SENHA 
+    const ADMIN_SENHA = process.env.ADMIN_SENHA;
 
     if (senha !== ADMIN_SENHA) {
         return res.status(403).json({ success: false, message: 'Senha de administrador inválida.' });
     }
 
     if (!query || !query.trim()) {
-        return res.status(400).json({ success: false, message: 'Nenhuma query SQL foi enviada.' });
+        return res.status(400).json({ success: false, message: 'Nenhuma query SQL foi enviada.'VN });
     }
 
     try {
