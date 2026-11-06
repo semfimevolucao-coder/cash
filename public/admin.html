@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Cash Rain</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 25px; border-radius: 12px; border: 1px solid #334155; }
+        h2 { color: #10b981; margin-bottom: 15px; }
+        input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 1rem; }
+        textarea { height: 100px; font-family: monospace; }
+        button { background: #10b981; color: #fff; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #059669; }
+        .shortcuts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .btn-shortcut { background: #334155; padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 6px; cursor: pointer; }
+        .btn-shortcut:hover { background: #475569; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+        th, td { border: 1px solid #334155; padding: 10px; text-align: left; }
+        th { background: #334155; color: #10b981; }
+        .error { color: #ef4444; background: #7f1d1d; padding: 10px; border-radius: 6px; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🛠️ Painel Admin SQL - Cash Rain</h2>
+    
+    <label>Senha Admin:</label>
+    <input type="password" id="admin-pass" placeholder="Digite a senha admin">
+
+    <label>Atalhos rápidos:</label>
+    <div class="shortcuts">
+        <button class="btn-shortcut" onclick="preencherQuery('SELECT * FROM usuarios;')">Ver Usuários</button>
+        <button class="btn-shortcut" onclick="preencherQuery('SELECT * FROM historico_ganhos ORDER BY id DESC LIMIT 20;')">Últimos Ganhos</button>
+        <button class="btn-shortcut" onclick="preencherQuery('SELECT * FROM saques WHERE status = \'Waiting\';')">Saques Pendentes</button>
+        <button class="btn-shortcut" onclick="preencherQuery('SELECT email, SUM(pontos) FROM historico_ganhos GROUP BY email;')">Saldo Total por Usuário</button>
+    </div>
+
+    <label>Comando SQL:</label>
+    <textarea id="sql-query" placeholder="Digite seu SQL aqui (ex: SELECT * FROM usuarios;)"></textarea>
+    
+    <button onclick="executarSQL()">Executar Consulta / Comando</button>
+
+    <div id="resultado-container"></div>
+</div>
+
+<script>
+    function preencherQuery(sql) {
+        document.getElementById('sql-query').value = sql;
+    }
+
+    async function executarSQL() {
+        const senha = document.getElementById('admin-pass').value;
+        const query = document.getElementById('sql-query').value;
+        const container = document.getElementById('resultado-container');
+        container.innerHTML = 'Processando...';
+
+        try {
+            const res = await fetch('/api/admin/sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha, query })
+            });
+            const data = await res.json();
+
+            if (!data.success) {
+                container.innerHTML = `<div class="error">Erro: ${data.error || data.message}</div>`;
+                return;
+            }
+
+            if (!data.rows || data.rows.length === 0) {
+                container.innerHTML = `<p style="margin-top: 15px; color: #94a3b8;">Comando executado com sucesso. Linhas afetadas: ${data.rowCount}</p>`;
+                return;
+            }
+
+            // Monta a tabela de resultados dinamicamente
+            let html = `<p style="margin-top: 15px; color: #10b981;">Total de registros: ${data.rows.length}</p><table><thead><tr>`;
+            const colunas = Object.keys(data.rows[0]);
+            colunas.forEach(col => html += `<th>${col}</th>`);
+            html += `</tr></thead><tbody>`;
+
+            data.rows.forEach(row => {
+                html += `<tr>`;
+                colunas.forEach(col => html += `<td>${row[col] !== null ? row[col] : 'NULL'}</td>`);
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+
+            container.innerHTML = html;
+
+        } catch (err) {
+            container.innerHTML = `<div class="error">Erro de conexão ao executar comando.</div>`;
+        }
+    }
+</script>
+
+</body>
+</html>
