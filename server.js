@@ -6,10 +6,9 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SECRET = process.env.MONEYRAIN_SECRET || 'seu_secret_aqui';
+const SECRET = process.env.MONEYRAIN_SECRET 
 
 // Middlewares
-// Suporte ao corpo raw no callback do MoneyRain para validação HMAC
 app.use('/api/moneyrain-callback', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -68,13 +67,13 @@ async function inicializarBanco() {
 }
 
 // ==========================================
-// 1. ROTAS DE FRONTEND
+// ROTAS DE FRONTEND
 // ==========================================
 app.get('/', (req, res) => res.redirect('/cashrain'));
 app.get('/cashrain', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cashrain.html')));
 
 // ==========================================
-// 2. REGISTRO / LOGIN COM INDICAÇÃO
+// REGISTRO / LOGIN COM INDICAÇÃO
 // ==========================================
 app.post('/api/login', async (req, res) => {
     const { projeto, email, indicado_por } = req.body;
@@ -103,7 +102,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==========================================
-// 3. CONSULTA DE SALDO
+// CONSULTA DE SALDO
 // ==========================================
 app.get('/api/saldo', async (req, res) => {
     const { projeto, email } = req.query;
@@ -137,11 +136,13 @@ app.get('/api/saldo', async (req, res) => {
 });
 
 // ==========================================
-// 4. SOLICITAÇÃO DE SAQUE (PENDENTE / WAITING)
+// SOLICITAÇÃO DE SAQUE (PENDENTE / WAITING)
 // ==========================================
 app.post('/api/solicitar-saque', async (req, res) => {
-    const { projeto, email } = req.body;
-    if (!projeto || !email) {
+    const { projeto, email, chave_pix_faucetpay } = req.body;
+    const destino = chave_pix_faucetpay || email;
+
+    if (!projeto || !destino) {
         return res.status(400).json({ success: false, message: 'Dados incompletos.' });
     }
 
@@ -151,11 +152,11 @@ app.post('/api/solicitar-saque', async (req, res) => {
 
         const resGanhos = await client.query(
             'SELECT COALESCE(SUM(pontos), 0) as total FROM historico_ganhos WHERE projeto = $1 AND email = $2', 
-            [projeto, email]
+            [projeto, destino]
         );
         const resSaques = await client.query(
             "SELECT COALESCE(SUM(pontos_solicitados), 0) as total FROM saques WHERE projeto = $1 AND email = $2 AND status != 'rejected'", 
-            [projeto, email]
+            [projeto, destino]
         );
 
         const totalGanho = parseFloat(resGanhos.rows[0].total);
@@ -165,13 +166,13 @@ app.post('/api/solicitar-saque', async (req, res) => {
 
         if (saldoDisponivel < minimoSaque) {
             await client.query('ROLLBACK');
-            return res.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
+            return.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${minimoSaque}.` });
         }
 
         await client.query(
             `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao) 
              VALUES ($1, $2, $3, $4, $5, 'Waiting', NOW())`,
-            [projeto, email, saldoDisponivel, saldoDisponivel, email]
+            [projeto, destino, saldoDisponivel, saldoDisponivel, destino]
         );
 
         await client.query('COMMIT');
@@ -190,7 +191,7 @@ app.post('/api/solicitar-saque', async (req, res) => {
 });
 
 // ==========================================
-// 5. CALLBACK MONEYRAIN COM 3 NÍVEIS E HMAC
+// CALLBACK MONEYRAIN COM 3 NÍVEIS E HMAC
 // ==========================================
 app.post('/api/moneyrain-callback', async (req, res) => {
     const signature = req.headers['x-moneyrain-signature'];
@@ -202,7 +203,6 @@ app.post('/api/moneyrain-callback', async (req, res) => {
 
     let bodyBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body));
 
-    // Validação HMAC Sha256
     const hmac = crypto.createHmac('sha256', SECRET);
     hmac.update(bodyBuffer);
     const hash = hmac.digest('hex');
@@ -234,7 +234,6 @@ app.post('/api/moneyrain-callback', async (req, res) => {
         try {
             await client.query('BEGIN');
 
-            // Check idempotência
             const check = await client.query(
                 "SELECT 1 FROM historico_ganhos WHERE referencia_id = $1 AND origem = 'moneyrain'", 
                 [viewId.toString()]
