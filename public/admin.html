@@ -6,19 +6,25 @@
     <title>Painel Admin - Cash Rain</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 25px; border-radius: 12px; border: 1px solid #334155; }
+        .container { max-width: 1000px; margin: 0 auto; background: #1e293b; padding: 25px; border-radius: 12px; border: 1px solid #334155; }
         h2 { color: #10b981; margin-bottom: 15px; }
         input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 1rem; }
         textarea { height: 100px; font-family: monospace; }
         button { background: #10b981; color: #fff; font-weight: bold; cursor: pointer; border: none; }
         button:hover { background: #059669; }
         .shortcuts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .btn-shortcut { background: #334155; padding: 6px 12px; font-size: 0.85rem; width: auto; border-radius: 6px; cursor: pointer; }
+        .btn-shortcut { background: #334155; padding: 8px 14px; font-size: 0.85rem; width: auto; border-radius: 6px; cursor: pointer; }
         .btn-shortcut:hover { background: #475569; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
         th, td { border: 1px solid #334155; padding: 10px; text-align: left; }
         th { background: #334155; color: #10b981; }
         .error { color: #ef4444; background: #7f1d1d; padding: 10px; border-radius: 6px; margin-top: 15px; }
+        
+        /* Botões de Ação na Tabela */
+        .btn-pago { background: #10b981; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-pago:hover { background: #059669; }
+        .btn-rejeitar { background: #ef4444; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+        .btn-rejeitar:hover { background: #dc2626; }
     </style>
 </head>
 <body>
@@ -31,10 +37,10 @@
 
     <label>Atalhos rápidos:</label>
     <div class="shortcuts">
-        <button class="btn-shortcut" onclick="preencherQuery('SELECT * FROM usuarios;')">Ver Usuários</button>
-        <button class="btn-shortcut" onclick="preencherQuery('SELECT * FROM historico_ganhos ORDER BY id DESC LIMIT 20;')">Últimos Ganhos</button>
-        <button class="btn-shortcut" onclick="preencherQuery('SELECT * FROM saques WHERE status = \'Waiting\';')">Saques Pendentes</button>
-        <button class="btn-shortcut" onclick="preencherQuery('SELECT email, SUM(pontos) FROM historico_ganhos GROUP BY email;')">Saldo Total por Usuário</button>
+        <button class="btn-shortcut" onclick="preencherEExecutar('SELECT id, email, chave_pix, status, pontos_solicitados, (pontos_solicitados / 99.0) as valor_usdt, data_solicitacao FROM saques WHERE status = \'Waiting\';')">💰 Saques Pendentes</button>
+        <button class="btn-shortcut" onclick="preencherEExecutar('SELECT * FROM saques ORDER BY id DESC LIMIT 20;')">📜 Histórico de Saques</button>
+        <button class="btn-shortcut" onclick="preencherEExecutar('SELECT * FROM usuarios;')">👥 Ver Usuários</button>
+        <button class="btn-shortcut" onclick="preencherEExecutar('SELECT * FROM historico_ganhos ORDER BY id DESC LIMIT 20;')">📈 Últimos Ganhos</button>
     </div>
 
     <label>Comando SQL:</label>
@@ -46,8 +52,38 @@
 </div>
 
 <script>
-    function preencherQuery(sql) {
+    function preencherEExecutar(sql) {
         document.getElementById('sql-query').value = sql;
+        executarSQL();
+    }
+
+    async function marcarComoPago(saqueId) {
+        if (!confirm(`Confirmar pagamento manual para o Saque ID #${saqueId}?`)) return;
+        const query = `UPDATE saques SET status = 'Paid', data_aprovacao = NOW() WHERE id = ${saqueId};`;
+        await rodarQueryDireta(query);
+        preencherEExecutar("SELECT id, email, chave_pix, status, pontos_solicitados, (pontos_solicitados / 99.0) as valor_usdt, data_solicitacao FROM saques WHERE status = 'Waiting';");
+    }
+
+    async function rejeitarSaque(saqueId) {
+        if (!confirm(`Deseja rejeitar o Saque ID #${saqueId}? (O saldo voltará para o usuário)`)) return;
+        const query = `UPDATE saques SET status = 'rejected', data_aprovacao = NOW() WHERE id = ${saqueId};`;
+        await rodarQueryDireta(query);
+        preencherEExecutar("SELECT id, email, chave_pix, status, pontos_solicitados, (pontos_solicitados / 99.0) as valor_usdt, data_solicitacao FROM saques WHERE status = 'Waiting';");
+    }
+
+    async function rodarQueryDireta(query) {
+        const senha = document.getElementById('admin-pass').value;
+        try {
+            const res = await fetch('/api/admin/sql', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha, query })
+            });
+            const data = await res.json();
+            if (!data.success) alert('Erro: ' + (data.error || data.message));
+        } catch (err) {
+            alert('Erro de conexão ao atualizar registro.');
+        }
     }
 
     async function executarSQL() {
@@ -70,19 +106,44 @@
             }
 
             if (!data.rows || data.rows.length === 0) {
-                container.innerHTML = `<p style="margin-top: 15px; color: #94a3b8;">Comando executado com sucesso. Linhas afetadas: ${data.rowCount}</p>`;
+                container.innerHTML = `<p style="margin-top: 15px; color: #94a3b8;">Nenhum registro encontrado ou comando executado com sucesso. Linhas afetadas: ${data.rowCount}</p>`;
                 return;
             }
 
-            // Monta a tabela de resultados dinamicamente
             let html = `<p style="margin-top: 15px; color: #10b981;">Total de registros: ${data.rows.length}</p><table><thead><tr>`;
             const colunas = Object.keys(data.rows[0]);
+            
             colunas.forEach(col => html += `<th>${col}</th>`);
+            
+            // Adiciona coluna de Ação se houver ID e Status na resposta (geralmente saques)
+            if (colunas.includes('id') && colunas.includes('status')) {
+                html += `<th>Ação</th>`;
+            }
+
             html += `</tr></thead><tbody>`;
 
             data.rows.forEach(row => {
                 html += `<tr>`;
-                colunas.forEach(col => html += `<td>${row[col] !== null ? row[col] : 'NULL'}</td>`);
+                colunas.forEach(col => {
+                    let valor = row[col] !== null ? row[col] : 'NULL';
+                    if (col === 'valor_usdt' && !isNaN(valor)) {
+                        valor = parseFloat(valor).toFixed(8);
+                    }
+                    html += `<td>${valor}</td>`;
+                });
+
+                // Se a linha for um saque pendente (Waiting), exibe os botões de ação rápida
+                if (colunas.includes('id') && colunas.includes('status')) {
+                    if (row.status === 'Waiting') {
+                        html += `<td>
+                            <button class="btn-pago" onclick="marcarComoPago(${row.id})">✅ Marcar Pago</button>
+                            <button class="btn-rejeitar" onclick="rejeitarSaque(${row.id})">❌ Rejeitar</button>
+                        </td>`;
+                    } else {
+                        html += `<td><span style="color: #94a3b8;">Finalizado</span></td>`;
+                    }
+                }
+
                 html += `</tr>`;
             });
             html += `</tbody></table>`;
