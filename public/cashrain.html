@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Rain - Ganhe Assistindo Anúncios</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Topbar com Saldo e Saque */
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { font-size: 1.4rem; font-weight: bold; color: var(--accent); }
+        .user-stats { display: flex; align-items: center; gap: 15px; }
+        .balance-badge { background: #334155; padding: 8px 14px; border-radius: 20px; font-size: 0.95rem; }
+        .balance-badge span { font-weight: bold; color: var(--accent); }
+        .btn-saque { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-saque:hover { background: var(--accent-hover); }
+
+        /* Conteúdo Principal / Embed */
+        main { flex: 1; padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+        /* Box de Login (Exibido se não estiver logado) */
+        .auth-box {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+        .auth-box input {
+            padding: 12px; width: 80%; max-width: 350px; border-radius: 8px; border: 1px solid #475569;
+            background: #0f172a; color: #fff; margin-bottom: 12px; font-size: 1rem; text-align: center;
+        }
+
+        /* Iframe / Embed Container */
+        .embed-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid #334155;
+            min-height: 450px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        iframe { width: 100%; height: 450px; border: none; border-radius: 8px; }
+
+        /* Rodapé de Cross-Promotion (Divulgação dos outros bots) */
+        .cross-promo { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: auto; }
+        .promo-card { background: var(--card-bg); padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; color: var(--text-main); border: 1px solid #334155; }
+        .promo-card:hover { border-color: var(--accent); }
+        .promo-card small { color: var(--text-muted); display: block; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <header>
+        <div class="logo">☔ Cash Rain</div>
+        <div class="user-stats">
+            <div class="balance-badge">Saldo: <span id="user-balance">0.00000000</span> Pts</div>
+            <button class="btn-saque" onclick="solicitarSaque()">Solicitar Saque</button>
+        </div>
+    </header>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main>
+        <!-- BOX DE LOGIN (LOGIN VIA EMAIL FAUCETPAY) -->
+        <div id="login-section" class="auth-box">
+            <h2>Bem-vindo ao Cash Rain</h2>
+            <p style="color: var(--text-muted); margin: 10px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
+            <input type="email" id="fp-email" placeholder="seu-email@faucetpay.com" required><br>
+            <button class="btn-saque" onclick="fazerLogin()">Entrar / Começar</button>
+        </div>
+
+        <!-- EMBED MONEYRAIN -->
+        <div id="embed-section" class="embed-container" style="display: none;">
+            <!-- Substitua a URL abaixo pela URL do seu parceiro / MoneyRain / Offerwall -->
+            <iframe id="moneyrain-iframe" src="about:blank"></iframe>
+        </div>
+
+        <!-- BANNERS DE CROSS-PROMOTION (OUTROS BOTS) -->
+        <div class="cross-promo">
+            <a href="/faucet" class="promo-card">
+                🪙 Faucet Web
+                <small>Resgate grátis a cada X min</small>
+            </a>
+            <a href="/zerads" class="promo-card">
+                ⚡ ZerAds
+                <small>Surf de anúncios PTC</small>
+            </a>
+            <a href="/mineracao" class="promo-card">
+                ⛏️ Mineração Virtual
+                <small>Simulador de renda passiva</small>
+            </a>
+        </div>
+    </main>
+
+    <script>
+        let currentUserEmail = localStorage.getItem('cashrain_email');
+
+        // Carrega sessão ao abrir a página
+        if (currentUserEmail) {
+            iniciarSessao(currentUserEmail);
+        }
+
+        function fazerLogin() {
+            const email = document.getElementById('fp-email').value.trim();
+            if (!email || !email.includes('@')) {
+                alert('Por favor, insira um e-mail válido da FaucetPay.');
+                return;
+            }
+            localStorage.setItem('cashrain_email', email);
+            iniciarSessao(email);
+        }
+
+        function iniciarSessao(email) {
+            currentUserEmail = email;
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('embed-section').style.display = 'flex';
+            
+            // Define o embed do MoneyRain (passando o e-mail como sub_id na URL se a rede permitir)
+            document.getElementById('moneyrain-iframe').src = `https://seusite-moneyrain.com/embed?user=${encodeURIComponent(email)}`;
+
+            atualizarSaldo();
+        }
+
+        async function atualizarSaldo() {
+            if (!currentUserEmail) return;
+            try {
+                const res = await fetch(`/api/saldo?projeto=cashrain&email=${encodeURIComponent(currentUserEmail)}`);
+                const data = await res.json();
+                document.getElementById('user-balance').innerText = data.saldo || '0.00000000';
+            } catch (err) {
+                console.log('Erro ao buscar saldo.');
+            }
+        }
+
+        async function solicitarSaque() {
+            if (!currentUserEmail) {
+                alert('Faça login com seu e-mail da FaucetPay primeiro.');
+                return;
+            }
+
+            const confirmacao = confirm(`Deseja solicitar o saque do seu saldo para o e-mail ${currentUserEmail}?`);
+            if (!confirmacao) return;
+
+            try {
+                const response = await fetch('/api/solicitar-saque', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projeto: 'cashrain',
+                        chave_pix_faucetpay: currentUserEmail,
+                        email: currentUserEmail
+                    })
+                });
+                const result = await response.json();
+                alert(result.message);
+                atualizarSaldo();
+            } catch (err) {
+                alert('Erro ao processar solicitação de saque.');
+            }
+        }
+    </script>
+</body>
+</html>
