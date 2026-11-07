@@ -25,6 +25,8 @@
         .btn-pago:hover { background: #059669; }
         .btn-rejeitar { background: #ef4444; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-left: 5px; }
         .btn-rejeitar:hover { background: #dc2626; }
+        .btn-copiar-chat { background: #3b82f6; margin-top: 10px; }
+        .btn-copiar-chat:hover { background: #2563eb; }
     </style>
 </head>
 <body>
@@ -52,6 +54,9 @@
 </div>
 
 <script>
+    // Variável global para armazenar o último resultado obtido
+    let ultimoResultadoCache = null;
+
     function preencherEExecutar(sql) {
         document.getElementById('sql-query').value = sql;
         executarSQL();
@@ -91,6 +96,7 @@
         const query = document.getElementById('sql-query').value;
         const container = document.getElementById('resultado-container');
         container.innerHTML = 'Processando...';
+        ultimoResultadoCache = null;
 
         try {
             const res = await fetch('/api/admin/sql', {
@@ -105,17 +111,26 @@
                 return;
             }
 
+            ultimoResultadoCache = { query, data };
+
             if (!data.rows || data.rows.length === 0) {
-                container.innerHTML = `<p style="margin-top: 15px; color: #94a3b8;">Nenhum registro encontrado ou comando executado com sucesso. Linhas afetadas: ${data.rowCount}</p>`;
+                container.innerHTML = `
+                    <p style="margin-top: 15px; color: #94a3b8;">Nenhum registro encontrado ou comando executado com sucesso. Linhas afetadas: ${data.rowCount}</p>
+                    <button class="btn-copiar-chat" onclick="copiarParaChat()">📋 Copiar Resposta para o Chat</button>
+                `;
                 return;
             }
 
-            let html = `<p style="margin-top: 15px; color: #10b981;">Total de registros: ${data.rows.length}</p><table><thead><tr>`;
+            let html = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <span style="color: #10b981;">Total de registros: ${data.rows.length}</span>
+                    <button class="btn-copiar-chat" style="width: auto; margin: 0; padding: 8px 16px;" onclick="copiarParaChat()">📋 Copiar Resposta para o Chat</button>
+                </div>
+                <table><thead><tr>`;
             const colunas = Object.keys(data.rows[0]);
             
             colunas.forEach(col => html += `<th>${col}</th>`);
             
-            // Adiciona coluna de Ação se houver ID e Status na resposta (geralmente saques)
             if (colunas.includes('id') && colunas.includes('status')) {
                 html += `<th>Ação</th>`;
             }
@@ -132,17 +147,16 @@
                     html += `<td>${valor}</td>`;
                 });
 
-                // Se a linha for um saque pendente (Waiting), exibe os botões de ação rápida
                 if (colunas.includes('id') && colunas.includes('status')) {
                     if (row.status === 'Waiting') {
                         html += `<td>
                             <button class="btn-pago" onclick="marcarComoPago(${row.id})">✅ Marcar Pago</button>
                             <button class="btn-rejeitar" onclick="rejeitarSaque(${row.id})">❌ Rejeitar</button>
-                        </td>`;
-                    } else {
-                        html += `<td><span style="color: #94a3b8;">Finalizado</span></td>`;
-                    }
-                }
+                      </td>`;
+                  } else {
+                      html += `<td><span style="color: #94a3b8;">Finalizado</span></td>`;
+                  }
+              }
 
                 html += `</tr>`;
             });
@@ -153,6 +167,29 @@
         } catch (err) {
             container.innerHTML = `<div class="error">Erro de conexão ao executar comando.</div>`;
         }
+    }
+
+    function copiarParaChat() {
+        if (!ultimoResultadoCache) {
+            alert('Nenhuma consulta executada recentemente.');
+            return;
+        }
+
+        const { query, data } = ultimoResultadoCache;
+        let textoFormatado = `Comando SQL utilizado:\n\`\`\`sql\n${query}\n\`\`\`\n\n`;
+
+        if (!data.rows || data.rows.length === 0) {
+            textoFormatado += `Resultado: Nenhum registro encontrado. Linhas afetadas: ${data.rowCount}`;
+        } else {
+            // Formata os dados em formato de texto estruturado / JSON legível para o chat
+            textoFormatado += `Resultado (${data.rows.length} registros):\n\`\`\`json\n${JSON.stringify(data.rows, null, 2)}\n\`\`\``;
+        }
+
+        navigator.clipboard.writeText(textoFormatado).then(() => {
+            alert('Conteúdo copiado com sucesso! Agora basta colar aqui no chat (Ctrl+V).');
+        }).catch(err => {
+            alert('Erro ao tentar copiar para a área de transferência.');
+        });
     }
 </script>
 
