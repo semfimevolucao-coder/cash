@@ -122,33 +122,7 @@
         </div>
     </header>
 
-    <!-- BANNER DE ANÚNCIO ZERADS (728x90) -->
-    <div class="banner-container">
-        <div id="ZerAds728" style="display: none;"></div>
-    </div>
-
-    <!-- SCRIPT DE CARREGAMENTO DO BANNER ZERADS -->
-    <script>
-        fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
-          .then(response => response.text())
-          .then(data => {
-            const elements = document.querySelectorAll('[id="ZerAds728"]');
-            for (const element of elements) {
-                if (element.style.display === 'none') {
-                    element.style.display = 'inline-block';
-                    if(data.includes("*BLANK*") == false) {
-                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
-                        element.innerHTML = "<iframe style='border:none;' width='728' height='90'></iframe>";
-                        element.querySelector('iframe').srcdoc = data;
-                    } else {
-                        element.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 8px;'><div style='position: absolute; color: #999; font-size: 32px; top: 25%; left: 32%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
-                    }
-                    break;
-                }
-            }
-          });
-    </script>
-
+    
     <!-- ÁREA PRINCIPAL -->
     <main>
         <!-- BOX DE LOGIN -->
@@ -178,21 +152,33 @@
             </div>
         </div>
 
-        <!-- BANNERS DE CROSS-PROMOTION -->
-        <div class="cross-promo">
-            <a href="/faucet" class="promo-card">
-                🪙 Faucet Web
-                <small id="c1-desc">Resgate grátis a cada X min</small>
-            </a>
-            <a href="/zerads" class="promo-card">
-                ⚡ ZerAds
-                <small id="c2-desc">Surf de anúncios PTC</small>
-            </a>
-            <a href="/mineracao" class="promo-card">
-                ⛏️ Mineração Virtual
-                <small id="c3-desc">Simulador de renda passiva</small>
-            </a>
-        </div>
+<!-- BANNER DE ANÚNCIO ZERADS (728x90) -->
+    <div class="banner-container">
+        <div id="ZerAds728" style="display: none;"></div>
+    </div>
+
+    <!-- SCRIPT DE CARREGAMENTO DO BANNER ZERADS -->
+    <script>
+        fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
+          .then(response => response.text())
+          .then(data => {
+            const elements = document.querySelectorAll('[id="ZerAds728"]');
+            for (const element of elements) {
+                if (element.style.display === 'none') {
+                    element.style.display = 'inline-block';
+                    if(data.includes("*BLANK*") == false) {
+                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
+                        element.innerHTML = "<iframe style='border:none;' width='728' height='90'></iframe>";
+                        element.querySelector('iframe').srcdoc = data;
+                    } else {
+                        element.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 8px;'><div style='position: absolute; color: #999; font-size: 32px; top: 25%; left: 32%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
+                    }
+                    break;
+                }
+            }
+          });
+    </script>
+
     </main>
 
     <script>
