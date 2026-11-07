@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.MONEYRAIN_SECRET;
 
-// Função blindada para normalizar e-mails (corrige ausência de @ e padroniza domínios)
+// Função blindada para normalizar e-mails (remove pontos do gmail, lowercase, e conserta falta de @)
 function normalizarEmail(email) {
     if (!email) return '';
     let limpo = email.trim().toLowerCase();
@@ -107,7 +107,6 @@ app.post('/api/login', async (req, res) => {
 
     if (indicado_por === email) indicado_por = null;
 
-    // Se não veio indicação explícita e não é a conta raiz, joga para o Chenson por padrão
     if (!indicado_por && email !== 'chensonbh763@gmail.com') {
         indicado_por = 'chensonbh763@gmail.com';
     }
@@ -225,15 +224,11 @@ app.post('/api/solicitar-saque', async (req, res) => {
 });
 
 // ==========================================
-// CALLBACK MONEYRAIN COM DISTRIBUIÇÃO PARA UPLINES (N1, N2, N3)
+// CALLBACK MONEYRAIN (REGISTRA GANHO PRINCIPAL)
 // ==========================================
 app.post('/api/moneyrain-callback', async (req, res) => {
     const signature = req.headers['x-moneyrain-signature'];
-    
     const percentualUsuario = 0.70; 
-    const comissaoN1 = 0.05; 
-    const comissaoN2 = 0.03; 
-    const comissaoN3 = 0.02; 
 
     let bodyBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body));
 
@@ -278,7 +273,6 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                 return res.status(200).send('Already credited');
             }
 
-            // 1. Credita 70% para o usuário principal que realizou a tarefa
             const ganhoLiquidoUsuario = (rewardAmount * percentualUsuario).toFixed(8);
             await client.query(
                 `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
@@ -286,45 +280,8 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                 [emailUser, ganhoLiquidoUsuario, nomeTarefa, viewId.toString()]
             );
 
-            // 2. Propaga as comissões subindo para os uplines (N1, N2, N3)
-            const userN1 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailUser]);
-            let emailN1 = userN1.rows.length > 0 ? normalizarEmail(userN1.rows[0].indicado_por) : null;
-
-            if (emailN1) {
-                const comissao1 = (rewardAmount * comissaoN1).toFixed(8);
-                await client.query(
-                    `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
-                     VALUES ('cashrain', $1, 'indicacao_n1', CAST($2 AS NUMERIC), 'Comissão Nível 1', $3 || '_n1', NOW())`,
-                    [emailN1, comissao1, viewId.toString()]
-                );
-
-                const userN2 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN1]);
-                let emailN2 = userN2.rows.length > 0 ? normalizarEmail(userN2.rows[0].indicado_por) : null;
-
-                if (emailN2) {
-                    const comissao2 = (rewardAmount * comissaoN2).toFixed(8);
-                    await client.query(
-                        `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
-                         VALUES ('cashrain', $1, 'indicacao_n2', CAST($2 AS NUMERIC), 'Comissão Nível 2', $3 || '_n2', NOW())`,
-                        [emailN2, comissao2, viewId.toString()]
-                    );
-
-                    const userN3 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN2]);
-                    let emailN3 = userN3.rows.length > 0 ? normalizarEmail(userN3.rows[0].indicado_por) : null;
-
-                    if (emailN3) {
-                        const comissao3 = (rewardAmount * comissaoN3).toFixed(8);
-                        await client.query(
-                            `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
-                             VALUES ('cashrain', $1, 'indicacao_n3', CAST($2 AS NUMERIC), 'Comissão Nível 3', $3 || '_n3', NOW())`,
-                            [emailN3, comissao3, viewId.toString()]
-                        );
-                    }
-                }
-            }
-
             await client.query('COMMIT');
-            console.log(`✅ MoneyRain Postback Sucesso! Comissões propagadas para uplines a partir de ${emailUser}.`);
+            console.log(`✅ MoneyRain Tarefa Registrada para ${emailUser} (ViewID: ${viewId})`);
             return res.status(200).send('OK');
 
         } catch (dbErr) {
@@ -337,6 +294,92 @@ app.post('/api/moneyrain-callback', async (req, res) => {
     }
 
     res.status(400).send('Invalid event');
+});
+
+// ==========================================
+// ROTINA DE PROCESSAMENTO E DISTRIBUIÇÃO DE COMISSÕES (N1, N2, N3)
+// ==========================================
+app.get('/api/processar-comissoes', async (req, res) => {
+    const comissaoN1 = 0.05; 
+    const comissaoN2 = 0.03; 
+    const comissaoN3 = 0.02; 
+    const percentualOriginal = 0.70; 
+
+    const client = await pool.connect();
+    try {
+        // Busca tarefas 'moneyrain' que ainda não tiveram o _n1 gerado (evita duplicação por referencia_id)
+        const pendentes = await client.query(`
+            SELECT h.email, h.pontos, h.referencia_id 
+            FROM historico_ganhos h
+            WHERE h.projeto = 'cashrain' 
+              AND h.origem = 'moneyrain'
+              AND NOT EXISTS (
+                  SELECT 1 FROM historico_ganhos com 
+                  WHERE com.referencia_id = h.referencia_id || '_n1'
+              )
+            LIMIT 100
+        `);
+
+        let processados = 0;
+
+        for (let row of pendentes.rows) {
+            const emailUser = normalizarEmail(row.email);
+            const viewId = row.referencia_id;
+            const pontosLiquidos = parseFloat(row.pontos);
+            const rewardAmount = pontosLiquidos / percentualOriginal;
+
+            // Busca N1 na tabela usuarios (tratando normalização)
+            const userN1 = await client.query("SELECT indicado_por FROM usuarios WHERE LOWER(email) = LOWER($1) AND projeto = 'cashrain'", [emailUser]);
+            let emailN1 = userN1.rows.length > 0 ? normalizarEmail(userN1.rows[0].indicado_por) : null;
+
+            if (emailN1 && emailN1 !== emailUser) {
+                const comissao1 = (rewardAmount * comissaoN1).toFixed(8);
+                await client.query(
+                    `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
+                     VALUES ('cashrain', $1, 'indicacao_n1', CAST($2 AS NUMERIC), 'Comissão Nível 1', $3, NOW())
+                     ON CONFLICT DO NOTHING`,
+                    [emailN1, comissao1, viewId + '_n1']
+                );
+
+                // Busca N2
+                const userN2 = await client.query("SELECT indicado_por FROM usuarios WHERE LOWER(email) = LOWER($1) AND projeto = 'cashrain'", [emailN1]);
+                let emailN2 = userN2.rows.length > 0 ? normalizarEmail(userN2.rows[0].indicado_por) : null;
+
+                if (emailN2 && emailN2 !== emailUser && emailN2 !== emailN1) {
+                    const comissao2 = (rewardAmount * comissaoN2).toFixed(8);
+                    await client.query(
+                        `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
+                         VALUES ('cashrain', $1, 'indicacao_n2', CAST($2 AS NUMERIC), 'Comissão Nível 2', $3, NOW())
+                         ON CONFLICT DO NOTHING`,
+                        [emailN2, comissao2, viewId + '_n2']
+                    );
+
+                    // Busca N3
+                    const userN3 = await client.query("SELECT indicado_por FROM usuarios WHERE LOWER(email) = LOWER($1) AND projeto = 'cashrain'", [emailN2]);
+                    let emailN3 = userN3.rows.length > 0 ? normalizarEmail(userN3.rows[0].indicado_por) : null;
+
+                    if (emailN3 && emailN3 !== emailUser && emailN3 !== emailN1 && emailN3 !== emailN2) {
+                        const comissao3 = (rewardAmount * comissaoN3).toFixed(8);
+                        await client.query(
+                            `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
+                             VALUES ('cashrain', $1, 'indicacao_n3', CAST($2 AS NUMERIC), 'Comissão Nível 3', $3, NOW())
+                             ON CONFLICT DO NOTHING`,
+                            [emailN3, comissao3, viewId + '_n3']
+                        );
+                    }
+                }
+            }
+            processados++;
+        }
+
+        res.json({ success: true, processados: processados, mensagem: `${processados} lotes de comissões verificados e distribuídos com sucesso!` });
+
+    } catch (err) {
+        console.error("Erro ao processar comissões pendentes:", err);
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        client.release();
+    }
 });
 
 // ==========================================
