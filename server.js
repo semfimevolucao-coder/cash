@@ -410,6 +410,31 @@ app.post('/api/admin/sql', async (req, res) => {
     }
 });
 
+// ==========================================
+// ROTA PARA REGISTRAR MÉTRICAS UTM
+// ==========================================
+app.post('/api/registrar-metrica', async (req, res) => {
+    const { projeto, email_afiliado, utm_source, utm_medium, utm_campaign, acao } = req.body;
+    
+    if (!projeto || !email_afiliado || !acao) {
+        return res.status(400).json({ success: false, message: 'Dados incompletos.' });
+    }
+
+    const emailLimpo = normalizarEmail(email_afiliado);
+
+    try {
+        await pool.query(
+            `INSERT INTO metricas_divulgacao (projeto, email_afiliado, utm_source, utm_medium, utm_campaign, acao, data_registro) 
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+            [projeto, emailLimpo, utm_source || 'direto', utm_medium || 'indefinido', utm_campaign || 'geral', acao]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Erro ao registrar métrica:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Inicialização
 app.listen(PORT, async () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
