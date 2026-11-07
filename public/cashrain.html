@@ -143,13 +143,24 @@
     </main>
 
     <script>
-        let currentUserEmail = localStorage.getItem('cashrain_email');
+        // Função utilitária para normalizar e-mail no frontend
+        function normalizarEmailFrontend(email) {
+            if (!email) return '';
+            let limpo = email.trim().toLowerCase();
+            if (!limpo.includes('@') && limpo.endsWith('gmail.com')) {
+                let nome = limpo.replace('gmail.com', '').replace(/[^a-z0-9]/g, '');
+                limpo = `${nome}@gmail.com`;
+            }
+            return limpo;
+        }
+
+        let currentUserEmail = normalizarEmailFrontend(localStorage.getItem('cashrain_email'));
 
         // Captura o ?ref= da URL ao entrar no site e guarda no localStorage
         const urlParams = new URLSearchParams(window.location.search);
         const refUrl = urlParams.get('ref');
         if (refUrl) {
-            localStorage.setItem('cashrain_indicado_por', refUrl);
+            localStorage.setItem('cashrain_indicado_por', normalizarEmailFrontend(refUrl));
         }
 
         // Carrega sessão ao abrir a página se já estiver logado
@@ -158,7 +169,9 @@
         }
 
         async function fazerLogin() {
-            const email = document.getElementById('fp-email').value.trim();
+            const rawEmail = document.getElementById('fp-email').value;
+            const email = normalizarEmailFrontend(rawEmail);
+
             if (!email || !email.includes('@')) {
                 alert('Por favor, insira um e-mail válido da FaucetPay.');
                 return;
