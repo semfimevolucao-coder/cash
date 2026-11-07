@@ -38,20 +38,14 @@
         .btn-lang { background: #334155; color: var(--text-main); border: 1px solid #475569; padding: 7px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-lang:hover { background: #475569; }
 
-/* Container do Banner Publicitário Otimizado para Mobile */
+        /* Container do Banner AAds Responsivo */
         .banner-container {
             display: flex;
             justify-content: center;
-            margin: 20px 0;
+            margin: 15px auto;
             padding: 0 10px;
             width: 100%;
-            overflow-x: auto; /* Permite rolar o banner lateralmente se a tela for menor que 728px */
-        }
-
-        /* Garante que o iframe do ZerAds se adapte caso necessário */
-        #ZerAds728 iframe {
-            max-width: 100%;
-            height: 90px;
+            max-width: 1000px;
         }
 
         /* Conteúdo Principal / Embed */
@@ -65,7 +59,7 @@
             text-align: center;
             border: 1px solid #334155;
             max-width: 500px;
-            margin: 40px auto;
+            margin: 20px auto;
             width: 100%;
         }
         .auth-box input {
@@ -130,7 +124,6 @@
         </div>
     </header>
 
-    
     <!-- ÁREA PRINCIPAL -->
     <main>
         <!-- BOX DE LOGIN -->
@@ -160,256 +153,231 @@
             </div>
         </div>
 
-        <!-- BANNER DE ANÚNCIO ZERADS (728x90) NO TOPO -->
-        <div class="banner-container">
-            <div id="ZerAds728" style="display: none;"></div>
+    <!-- BANNER AADS AD UNIT 2461304 -->
+    <div class="banner-container">
+        <div id="frame" style="width: 100%; margin: auto; position: relative; z-index: 99998;">
+            <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461303/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
         </div>
+    </div>
 
-   <!-- SCRIPT DE CARREGAMENTO DO BANNER ZERADS -->
     <script>
-        fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
-          .then(response => response.text())
-          .then(data => {
-            const elements = document.querySelectorAll('[id="ZerAds728"]');
-            for (const element of elements) {
-                if (element.style.display === 'none') {
-                    element.style.display = 'inline-block';
-                    if(data.includes("*BLANK*") == false) {
-                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
-                        element.innerHTML = "<iframe style='border:none;' width='728' height='90'></iframe>";
-                        element.querySelector('iframe').srcdoc = data;
-                    } else {
-                        element.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 8px;'><div style='position: absolute; color: #999; font-size: 32px; top: 25%; left: 32%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
-                    }
-                    break;
+        // 1. Declaração correta e antecipada da variável global
+        let currentUserEmail = '';
+
+        // Função utilitária para normalizar e-mail no frontend
+        function normalizarEmailFrontend(email) {
+            if (!email) return '';
+            let limpo = email.trim().toLowerCase();
+            if (!limpo.includes('@') && limpo.endsWith('gmail.com')) {
+                let nome = limpo.replace('gmail.com', '').replace(/[^a-z0-9]/g, '');
+                limpo = `${nome}@gmail.com`;
+            }
+            return limpo;
+        }
+
+        // Sistema de Traduções PT / EN com proteção contra null
+        let currentLang = localStorage.getItem('cashrain_lang') || 'pt';
+
+        const dict = {
+            pt: {
+                pageTitle: "Cash Rain - Ganhe Assistindo Anúncios",
+                balance: "Saldo",
+                btnSaque: "Solicitar Saque",
+                loginTitle: "Bem-vindo ao Cash Rain",
+                loginDesc: "Digite seu e-mail da FaucetPay para começar a pontuar:",
+                loginBtn: "Entrar / Começar",
+                refTitle: "🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)",
+                refDesc: "Compartilhe com amigos e ganhe comissão sobre as tarefas deles!",
+                copyBtn: "Copiar",
+                delayMsg: "⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.",
+                copyAlert: "Link de indicação copiado com sucesso!",
+                loginAlert: "Por favor, insira um e-mail válido da FaucetPay.",
+                loginError: "Erro ao realizar login.",
+                loginConnError: "Erro de conexão ao tentar entrar.",
+                saquePrompt: (email) => `Deseja solicitar o saque de todo o seu saldo disponível para o e-mail FaucetPay: ${email}?`,
+                saqueError: "Erro ao processar solicitação de saque.",
+                c1: "Resgate grátis a cada X min",
+                c2: "Surf de anúncios PTC",
+                c3: "Simulador de renda passiva",
+                langButton: "🌐 EN"
+            },
+            en: {
+                pageTitle: "Cash Rain - Earn Watching Ads",
+                balance: "Balance",
+                btnSaque: "Request Withdrawal",
+                loginTitle: "Welcome to Cash Rain",
+                loginDesc: "Enter your FaucetPay email to start earning points:",
+                loginBtn: "Login / Start",
+                refTitle: "🔗 Your Referral Link (Earn up to 3 Levels)",
+                refDesc: "Share with friends and earn commission on their tasks!",
+                copyBtn: "Copy",
+                delayMsg: "⏳ Earnings and commissions may take up to 5 minutes to appear in your balance due to MoneyRain server response time.",
+                copyAlert: "Referral link copied successfully!",
+                loginAlert: "Please enter a valid FaucetPay email.",
+                loginError: "Error logging in.",
+                loginConnError: "Connection error trying to log in.",
+                saquePrompt: (email) => `Do you want to request withdrawal of all available balance to your FaucetPay email: ${email}?`,
+                saqueError: "Error processing withdrawal request.",
+                c1: "Free claim every X min",
+                c2: "PTC ads surf",
+                c3: "Virtual mining simulator",
+                langButton: "🌐 PT"
+            }
+        };
+
+        function aplicarIdioma() {
+            const t = dict[currentLang];
+            
+            function setElementText(id, text) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = text;
+            }
+
+            setElementText('page-title', t.pageTitle);
+            setElementText('txt-balance', t.balance);
+            setElementText('btn-saque-text', t.btnSaque);
+            setElementText('login-title', t.loginTitle);
+            setElementText('login-desc', t.loginDesc);
+            setElementText('login-btn-text', t.loginBtn);
+            setElementText('ref-box-title', t.refTitle);
+            setElementText('ref-box-desc', t.refDesc);
+            setElementText('copy-btn-text', t.copyBtn);
+            setElementText('delay-warning-text', t.delayMsg);
+            setElementText('c1-desc', t.c1);
+            setElementText('c2-desc', t.c2);
+            setElementText('c3-desc', t.c3);
+            setElementText('lang-btn', t.langButton);
+
+            const emailInput = document.getElementById('fp-email');
+            if (emailInput) {
+                emailInput.placeholder = currentLang === 'pt' ? "seu-email@faucetpay.com" : "your-email@faucetpay.com";
+            }
+        }
+
+        function alternarIdioma() {
+            currentLang = currentLang === 'pt' ? 'en' : 'pt';
+            localStorage.setItem('cashrain_lang', currentLang);
+            aplicarIdioma();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            aplicarIdioma();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const refUrl = urlParams.get('ref');
+            if (refUrl) {
+                localStorage.setItem('cashrain_indicado_por', normalizarEmailFrontend(refUrl));
+            }
+
+            const savedEmail = normalizarEmailFrontend(localStorage.getItem('cashrain_email'));
+            if (savedEmail) {
+                iniciarSessao(savedEmail);
+            }
+        });
+
+        async function fazerLogin() {
+            const rawEmail = document.getElementById('fp-email').value;
+            const email = normalizarEmailFrontend(rawEmail);
+            const t = dict[currentLang];
+
+            if (!email || !email.includes('@')) {
+                alert(t.loginAlert);
+                return;
+            }
+
+            const indicadoPor = localStorage.getItem('cashrain_indicado_por') || null;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projeto: 'cashrain', email: email, indicado_por: indicadoPor })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('cashrain_email', email);
+                    iniciarSessao(email);
+                } else {
+                    alert(data.message || t.loginError);
                 }
+            } catch (err) {
+                console.error(err);
+                alert(t.loginConnError);
             }
-          });
-    </script>
-
-    </main>
-
-    <script>
-    // 1. Declaração correta e antecipada da variável global
-    let currentUserEmail = '';
-
-    // Função utilitária para normalizar e-mail no frontend
-    function normalizarEmailFrontend(email) {
-        if (!email) return '';
-        let limpo = email.trim().toLowerCase();
-        if (!limpo.includes('@') && limpo.endsWith('gmail.com')) {
-            let nome = limpo.replace('gmail.com', '').replace(/[^a-z0-9]/g, '');
-            limpo = `${nome}@gmail.com`;
-        }
-        return limpo;
-    }
-
-    // Sistema de Traduções PT / EN com proteção contra null
-    let currentLang = localStorage.getItem('cashrain_lang') || 'pt';
-
-    const dict = {
-        pt: {
-            pageTitle: "Cash Rain - Ganhe Assistindo Anúncios",
-            balance: "Saldo",
-            btnSaque: "Solicitar Saque",
-            loginTitle: "Bem-vindo ao Cash Rain",
-            loginDesc: "Digite seu e-mail da FaucetPay para começar a pontuar:",
-            loginBtn: "Entrar / Começar",
-            refTitle: "🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)",
-            refDesc: "Compartilhe com amigos e ganhe comissão sobre as tarefas deles!",
-            copyBtn: "Copiar",
-            delayMsg: "⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.",
-            copyAlert: "Link de indicação copiado com sucesso!",
-            loginAlert: "Por favor, insira um e-mail válido da FaucetPay.",
-            loginError: "Erro ao realizar login.",
-            loginConnError: "Erro de conexão ao tentar entrar.",
-            saquePrompt: (email) => `Deseja solicitar o saque de todo o seu saldo disponível para o e-mail FaucetPay: ${email}?`,
-            saqueError: "Erro ao processar solicitação de saque.",
-            c1: "Resgate grátis a cada X min",
-            c2: "Surf de anúncios PTC",
-            c3: "Simulador de renda passiva",
-            langButton: "🌐 EN"
-        },
-        en: {
-            pageTitle: "Cash Rain - Earn Watching Ads",
-            balance: "Balance",
-            btnSaque: "Request Withdrawal",
-            loginTitle: "Welcome to Cash Rain",
-            loginDesc: "Enter your FaucetPay email to start earning points:",
-            loginBtn: "Login / Start",
-            refTitle: "🔗 Your Referral Link (Earn up to 3 Levels)",
-            refDesc: "Share with friends and earn commission on their tasks!",
-            copyBtn: "Copy",
-            delayMsg: "⏳ Earnings and commissions may take up to 5 minutes to appear in your balance due to MoneyRain server response time.",
-            copyAlert: "Referral link copied successfully!",
-            loginAlert: "Please enter a valid FaucetPay email.",
-            loginError: "Error logging in.",
-            loginConnError: "Connection error trying to log in.",
-            saquePrompt: (email) => `Do you want to request withdrawal of all available balance to your FaucetPay email: ${email}?`,
-            saqueError: "Error processing withdrawal request.",
-            c1: "Free claim every X min",
-            c2: "PTC ads surf",
-            c3: "Virtual mining simulator",
-            langButton: "🌐 PT"
-        }
-    };
-
-    function aplicarIdioma() {
-        const t = dict[currentLang];
-        
-        // Função auxiliar segura para evitar erros de null
-        function setElementText(id, text) {
-            const el = document.getElementById(id);
-            if (el) el.innerText = text;
         }
 
-        setElementText('page-title', t.pageTitle);
-        setElementText('txt-balance', t.balance);
-        setElementText('btn-saque-text', t.btnSaque);
-        setElementText('login-title', t.loginTitle);
-        setElementText('login-desc', t.loginDesc);
-        setElementText('login-btn-text', t.loginBtn);
-        setElementText('ref-box-title', t.refTitle);
-        setElementText('ref-box-desc', t.refDesc);
-        setElementText('copy-btn-text', t.copyBtn);
-        setElementText('delay-warning-text', t.delayMsg);
-        setElementText('c1-desc', t.c1);
-        setElementText('c2-desc', t.c2);
-        setElementText('c3-desc', t.c3);
-        setElementText('lang-btn', t.langButton);
-
-        const emailInput = document.getElementById('fp-email');
-        if (emailInput) {
-            emailInput.placeholder = currentLang === 'pt' ? "seu-email@faucetpay.com" : "your-email@faucetpay.com";
-        }
-    }
-
-    function alternarIdioma() {
-        currentLang = currentLang === 'pt' ? 'en' : 'pt';
-        localStorage.setItem('cashrain_lang', currentLang);
-        aplicarIdioma();
-    }
-
-    // Executa após o carregamento do DOM
-    document.addEventListener('DOMContentLoaded', () => {
-        aplicarIdioma();
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const refUrl = urlParams.get('ref');
-        if (refUrl) {
-            localStorage.setItem('cashrain_indicado_por', normalizarEmailFrontend(refUrl));
-        }
-
-        const savedEmail = normalizarEmailFrontend(localStorage.getItem('cashrain_email'));
-        if (savedEmail) {
-            iniciarSessao(savedEmail);
-        }
-    });
-
-    async function fazerLogin() {
-        const rawEmail = document.getElementById('fp-email').value;
-        const email = normalizarEmailFrontend(rawEmail);
-        const t = dict[currentLang];
-
-        if (!email || !email.includes('@')) {
-            alert(t.loginAlert);
-            return;
-        }
-
-        const indicadoPor = localStorage.getItem('cashrain_indicado_por') || null;
-
-        try {
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projeto: 'cashrain', email: email, indicado_por: indicadoPor })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                localStorage.setItem('cashrain_email', email);
-                iniciarSessao(email);
-            } else {
-                alert(data.message || t.loginError);
+        function iniciarSessao(email) {
+            currentUserEmail = email;
+            const loginSec = document.getElementById('login-section');
+            const embedSec = document.getElementById('embed-section');
+            
+            if (loginSec) loginSec.style.display = 'none';
+            if (embedSec) embedSec.style.display = 'flex';
+            
+            const iframe = document.getElementById('moneyrain-iframe');
+            if (iframe) {
+                iframe.src = `https://offerwall.moneyrain.top/embed.php?pub=228&site=cash-tzgk.onrender.com&uid=${encodeURIComponent(email)}`;
             }
-        } catch (err) {
-            console.error(err);
-            alert(t.loginConnError);
-        }
-    }
 
-    function iniciarSessao(email) {
-        currentUserEmail = email;
-        const loginSec = document.getElementById('login-section');
-        const embedSec = document.getElementById('embed-section');
-        
-        if (loginSec) loginSec.style.display = 'none';
-        if (embedSec) embedSec.style.display = 'flex';
-        
-        const iframe = document.getElementById('moneyrain-iframe');
-        if (iframe) {
-            iframe.src = `https://offerwall.moneyrain.top/embed.php?pub=228&site=cash-tzgk.onrender.com&uid=${encodeURIComponent(email)}`;
-        }
+            const refLinkInput = document.getElementById('user-ref-link');
+            if (refLinkInput) {
+                refLinkInput.value = `${window.location.origin}/cashrain?ref=${encodeURIComponent(email)}`;
+            }
 
-        const refLinkInput = document.getElementById('user-ref-link');
-        if (refLinkInput) {
-            refLinkInput.value = `${window.location.origin}/cashrain?ref=${encodeURIComponent(email)}`;
-        }
-
-        atualizarSaldo();
-        setInterval(atualizarSaldo, 15000); 
-    }
-
-    function copiarLink() {
-        const t = dict[currentLang];
-        const inputLink = document.getElementById('user-ref-link');
-        if (!inputLink) return;
-        inputLink.select();
-        inputLink.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(inputLink.value);
-        alert(t.copyAlert);
-    }
-
-    async function atualizarSaldo() {
-        if (!currentUserEmail) return;
-        try {
-            const res = await fetch(`/api/saldo?projeto=cashrain&email=${encodeURIComponent(currentUserEmail)}`);
-            const data = await res.json();
-            const balanceEl = document.getElementById('user-balance');
-            if (balanceEl) balanceEl.innerText = data.saldo || '0.00000000';
-        } catch (err) {
-            console.log('Erro ao buscar saldo.');
-        }
-    }
-
-    async function solicitarSaque() {
-        const t = dict[currentLang];
-        if (!currentUserEmail) {
-            alert(currentLang === 'pt' ? 'Faça login com seu e-mail da FaucetPay primeiro.' : 'Please login with your FaucetPay email first.');
-            return;
-        }
-
-        const confirmacao = confirm(t.saquePrompt(currentUserEmail));
-        if (!confirmacao) return;
-
-        try {
-            const response = await fetch('/api/solicitar-saque', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    projeto: 'cashrain',
-                    chave_pix_faucetpay: currentUserEmail,
-                    email: currentUserEmail
-                })
-            });
-            const result = await response.json();
-            alert(result.message);
             atualizarSaldo();
-        } catch (err) {
-            alert(t.saqueError);
+            setInterval(atualizarSaldo, 15000); 
         }
-    }
-</script>
 
+        function copiarLink() {
+            const t = dict[currentLang];
+            const inputLink = document.getElementById('user-ref-link');
+            if (!inputLink) return;
+            inputLink.select();
+            inputLink.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(inputLink.value);
+            alert(t.copyAlert);
+        }
+
+        async function atualizarSaldo() {
+            if (!currentUserEmail) return;
+            try {
+                const res = await fetch(`/api/saldo?projeto=cashrain&email=${encodeURIComponent(currentUserEmail)}`);
+                const data = await res.json();
+                const balanceEl = document.getElementById('user-balance');
+                if (balanceEl) balanceEl.innerText = data.saldo || '0.00000000';
+            } catch (err) {
+                console.log('Erro ao buscar saldo.');
+            }
+        }
+
+        async function solicitarSaque() {
+            const t = dict[currentLang];
+            if (!currentUserEmail) {
+                alert(currentLang === 'pt' ? 'Faça login com seu e-mail da FaucetPay primeiro.' : 'Please login with your FaucetPay email first.');
+                return;
+            }
+
+            const confirmacao = confirm(t.saquePrompt(currentUserEmail));
+            if (!confirmacao) return;
+
+            try {
+                const response = await fetch('/api/solicitar-saque', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projeto: 'cashrain',
+                        chave_pix_faucetpay: currentUserEmail,
+                        email: currentUserEmail
+                    })
+                });
+                const result = await response.json();
+                alert(result.message);
+                atualizarSaldo();
+            } catch (err) {
+                alert(t.saqueError);
+            }
+        }
+    </script>
 </body>
 </html>
