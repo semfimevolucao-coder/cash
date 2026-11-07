@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Cash Rain - Earn Crypto & USD Watching Ads</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
+        .btn-lang { background: #334155; color: var(--text-main); border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+        .hero {
+            max-width: 800px;
+            margin: 60px auto 40px auto;
+            text-align: center;
+            padding: 0 20px;
+        }
+        .hero h1 { font-size: 2.8rem; margin-bottom: 20px; line-height: 1.2; }
+        .hero h1 span { color: var(--accent); }
+        .hero p { font-size: 1.15rem; color: var(--text-muted); margin-bottom: 30px; line-height: 1.6; }
+
+        .cta-box {
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            max-width: 480px;
+            margin: 0 auto;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .cta-box input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            text-align: center;
+        }
+        .btn-cta {
+            width: 100%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-cta:hover { background: var(--accent-hover); }
+
+        .features {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .feature-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        .feature-card h3 { color: var(--accent); margin-bottom: 10px; font-size: 1.2rem; }
+        .feature-card p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
+
+        footer { text-align: center; padding: 30px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid #334155; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">☔ Cash Rain</div>
+        <button class="btn-lang" onclick="toggleLang()" id="lang-btn">🌐 PT</button>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1 id="hero-title">Get Paid to <span>Watch Ads</span> & Complete Tasks</h1>
+            <p id="hero-desc">Join Cash Rain, the ultimate micro-task platform. Earn daily rewards instantly and build your passive income with our 3-level referral commission system.</p>
+            
+            <div class="cta-box">
+                <p id="cta-label" style="margin-bottom: 15px; font-weight: 500;">Enter your FaucetPay email to start:</p>
+                <input type="email" id="user-email" placeholder="your-email@faucetpay.com" required>
+                <button class="btn-cta" id="cta-btn" onclick="registerAndStart()">Start Earning Now 🚀</button>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <h3 id="f1-title">⚡ Instant FaucetPay Payouts</h3>
+                <p id="f1-desc">Request your withdrawal anytime and receive your funds directly in your FaucetPay wallet with minimal fees and fast processing.</p>
+            </div>
+            <div class="feature-card">
+                <h3 id="f2-title">👥 3-Level Referral System</h3>
+                <p id="f2-desc">Multiply your earnings. Earn 5% from Level 1, 3% from Level 2, and 2% from Level 3 based on your network's completed tasks.</p>
+            </div>
+            <div class="feature-card">
+                <h3 id="f3-title">🌐 Global Offers & PTC Ads</h3>
+                <p id="f3-desc">Access high-paying offers, PTC ads, and surfing tasks updated 24/7 to guarantee endless earning opportunities.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Cash Rain. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Captura UTMs da URL e salva no localStorage para tráfego pago
+        const urlParams = new URLSearchParams(window.location.search);
+        const utmSource = urlParams.get('utm_source');
+        const utmMedium = urlParams.get('utm_medium');
+        const utmCampaign = urlParams.get('utm_campaign');
+        const refParam = urlParams.get('ref');
+
+        if (utmSource) localStorage.setItem('cashrain_utm_source', utmSource);
+        if (utmMedium) localStorage.setItem('cashrain_utm_medium', utmMedium);
+        if (utmCampaign) localStorage.setItem('cashrain_utm_campaign', utmCampaign);
+        if (refParam) localStorage.setItem('cashrain_indicado_por', refParam);
+
+        // Dispara métrica de visualização (para rastrear cliques e exibições do tráfego pago)
+        fetch('/api/registrar-metrica', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projeto: 'cashrain',
+                email_afiliado: refParam || 'sistema',
+                utm_source: utmSource || 'direto',
+                utm_medium: utmMedium || 'indefinido',
+                utm_campaign: utmCampaign || 'geral',
+                acao: 'visualizacao'
+            })
+        }).catch(e => {});
+
+        // Sistema de Tradução EN (Padrão) / PT
+        let currentLang = localStorage.getItem('cashrain_lang') || 'en';
+
+        const dict = {
+            en: {
+                pageTitle: "Cash Rain - Earn Crypto & USD Watching Ads",
+                heroTitle: "Get Paid to <span>Watch Ads</span> & Complete Tasks",
+                heroDesc: "Join Cash Rain, the ultimate micro-task platform. Earn daily rewards instantly and build your passive income with our 3-level referral commission system.",
+                ctaLabel: "Enter your FaucetPay email to start:",
+                ctaBtn: "Start Earning Now 🚀",
+                f1Title: "⚡ Instant FaucetPay Payouts",
+                f1Desc: "Request your withdrawal anytime and receive your funds directly in your FaucetPay wallet with minimal fees and fast processing.",
+                f2Title: "👥 3-Level Referral System",
+                f2Desc: "Multiply your earnings. Earn 5% from Level 1, 3% from Level 2, and 2% from Level 3 based on your network's completed tasks.",
+                f3Title: "🌐 Global Offers & PTC Ads",
+                f3Desc: "Access high-paying offers, PTC ads, and surfing tasks updated 24/7 to guarantee endless earning opportunities.",
+                placeholder: "your-email@faucetpay.com",
+                langBtn: "🌐 PT",
+                alertEmail: "Please enter a valid FaucetPay email."
+            },
+            pt: {
+                pageTitle: "Cash Rain - Ganhe Cripto e Dólar Assistindo Anúncios",
+                heroTitle: "Ganhe Dinheiro <span>Assistindo Anúncios</span> e Tarefas",
+                heroDesc: "Junte-se ao Cash Rain, a plataforma definitiva de micro-tarefas. Ganhe recompensas diárias e construa renda passiva com nosso sistema de comissão de 3 níveis.",
+                ctaLabel: "Digite seu e-mail FaucetPay para começar:",
+                ctaBtn: "Começar a Ganhar Agora 🚀",
+                f1Title: "⚡ Saques Instantâneos FaucetPay",
+                f1Desc: "Solicite seu saque a qualquer momento e receba seus fundos diretamente na sua carteira FaucetPay com rapidez.",
+                f2Title: "👥 Sistema de Indicação em 3 Níveis",
+                f2Desc: "Multiplique seus ganhos. Ganhe 5% no Nível 1, 3% no Nível 2 e 2% no Nível 3 sobre as tarefas da sua rede.",
+                f3Title: "🌐 Ofertas Globais e Anúncios PTC",
+                f3Desc: "Acesse ofertas pagas, anúncios PTC e tarefas de surf atualizadas 24 horas por dia para garantir ganhos contínuos.",
+                placeholder: "seu-email@faucetpay.com",
+                langBtn: "🌐 EN",
+                alertEmail: "Por favor, insira um e-mail válido da FaucetPay."
+            }
+        };
+
+        function applyLang() {
+            const t = dict[currentLang];
+            document.getElementById('page-title').innerText = t.pageTitle;
+            document.getElementById('hero-title').innerHTML = t.heroTitle;
+            document.getElementById('hero-desc').innerText = t.heroDesc;
+            document.getElementById('cta-label').innerText = t.ctaLabel;
+            document.getElementById('cta-btn').innerText = t.ctaBtn;
+            document.getElementById('f1-title').innerText = t.f1Title;
+            document.getElementById('f1-desc').innerText = t.f1Desc;
+            document.getElementById('f2-title').innerText = t.f2Title;
+            document.getElementById('f2-desc').innerText = t.f2Desc;
+            document.getElementById('f3-title').innerText = t.f3Title;
+            document.getElementById('f3-desc').innerText = t.f3Desc;
+            document.getElementById('user-email').placeholder = t.placeholder;
+            document.getElementById('lang-btn').innerText = t.langBtn;
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'pt' : 'en';
+            localStorage.setItem('cashrain_lang', currentLang);
+            applyLang();
+        }
+
+        applyLang();
+
+        async function registerAndStart() {
+            const rawEmail = document.getElementById('user-email').value.trim();
+            const t = dict[currentLang];
+
+            if (!rawEmail || !rawEmail.includes('@')) {
+                alert(t.alertEmail);
+                return;
+            }
+
+            // Normalização básica de e-mail
+            let email = rawEmail.toLowerCase();
+            if (email.endsWith('@gmail.com')) {
+                let parts = email.split('@');
+                email = parts[0].replace(/\./g, '') + '@gmail.com';
+            }
+
+            const indicadoPor = localStorage.getItem('cashrain_indicado_por') || null;
+
+            try {
+                // Envia dados de login e UTM para registrar conversão no banco
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projeto: 'cashrain',
+                        email: email,
+                        indicado_por: indicadoPor
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    localStorage.setItem('cashrain_email', email);
+
+                    // Registra a métrica de cadastro/conversão UTM
+                    fetch('/api/registrar-metrica', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            projeto: 'cashrain',
+                            email_afiliado: indicadoPor || 'sistema',
+                            utm_source: utmSource || 'direto',
+                            utm_medium: utmMedium || 'indefinido',
+                            utm_campaign: utmCampaign || 'geral',
+                            acao: 'cadastro'
+                        })
+                    }).catch(e => {});
+
+                    // Redireciona para o painel interno com a Offerwall do MoneyRain
+                    window.location.href = '/cashrain';
+                } else {
+                    alert(data.message || 'Error processing registration.');
+                }
+            } catch (err) {
+                alert('Connection error. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
