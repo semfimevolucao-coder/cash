@@ -38,6 +38,14 @@
         .btn-lang { background: #334155; color: var(--text-main); border: 1px solid #475569; padding: 7px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-lang:hover { background: #475569; }
 
+        /* Container do Banner Publicitário */
+        .banner-container {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0 5px 0;
+            padding: 0 10px;
+        }
+
         /* Conteúdo Principal / Embed */
         main { flex: 1; padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
 
@@ -113,6 +121,33 @@
             <button class="btn-saque" id="btn-saque-text" onclick="solicitarSaque()">Solicitar Saque</button>
         </div>
     </header>
+
+    <!-- BANNER DE ANÚNCIO ZERADS (728x90) -->
+    <div class="banner-container">
+        <div id="ZerAds728" style="display: none;"></div>
+    </div>
+
+    <!-- SCRIPT DE CARREGAMENTO DO BANNER ZERADS -->
+    <script>
+        fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
+          .then(response => response.text())
+          .then(data => {
+            const elements = document.querySelectorAll('[id="ZerAds728"]');
+            for (const element of elements) {
+                if (element.style.display === 'none') {
+                    element.style.display = 'inline-block';
+                    if(data.includes("*BLANK*") == false) {
+                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
+                        element.innerHTML = "<iframe style='border:none;' width='728' height='90'></iframe>";
+                        element.querySelector('iframe').srcdoc = data;
+                    } else {
+                        element.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 8px;'><div style='position: absolute; color: #999; font-size: 32px; top: 25%; left: 32%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
+                    }
+                    break;
+                }
+            }
+          });
+    </script>
 
     <!-- ÁREA PRINCIPAL -->
     <main>
