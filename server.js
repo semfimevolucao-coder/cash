@@ -8,15 +8,23 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.MONEYRAIN_SECRET;
 
-// Função auxiliar para normalizar e-mails (evita conflitos com pontos do Gmail e maiúsculas)
+// Função blindada para normalizar e-mails (corrige ausência de @ e padroniza domínios)
 function normalizarEmail(email) {
     if (!email) return '';
     let limpo = email.trim().toLowerCase();
+
+    // Se o e-mail veio sem o '@' mas é do Gmail
+    if (!limpo.includes('@') && limpo.endsWith('gmail.com')) {
+        let nome = limpo.replace('gmail.com', '').replace(/[^a-z0-9]/g, '');
+        limpo = `${nome}@gmail.com`;
+    }
+
     if (limpo.endsWith('@gmail.com') || limpo.endsWith('@googlemail.com')) {
         let partes = limpo.split('@');
         let usuario = partes[0].replace(/\./g, '');
-        return `${usuario}@${partes[1]}`;
+        return `${usuario}@gmail.com`;
     }
+
     return limpo;
 }
 
@@ -108,7 +116,6 @@ app.post('/api/login', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // Insere ou atualiza o usuário, garantindo que o link de indicação seja atualizado caso ele entre por outro link
         await client.query(
             `INSERT INTO usuarios (projeto, email, indicado_por) 
              VALUES ($1, $2, $3) 
@@ -218,7 +225,7 @@ app.post('/api/solicitar-saque', async (req, res) => {
 });
 
 // ==========================================
-// CALLBACK MONEYRAIN COM ÁRVORE DINÂMICA EM 3 NÍVEIS
+// CALLBACK MONEYRAIN COM DISTRIBUIÇÃO PARA UPLINES (N1, N2, N3)
 // ==========================================
 app.post('/api/moneyrain-callback', async (req, res) => {
     const signature = req.headers['x-moneyrain-signature'];
@@ -271,7 +278,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                 return res.status(200).send('Already credited');
             }
 
-            // 1. Credita 70% para o usuário principal da tarefa
+            // 1. Credita 70% para o usuário principal que realizou a tarefa
             const ganhoLiquidoUsuario = (rewardAmount * percentualUsuario).toFixed(8);
             await client.query(
                 `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
@@ -279,38 +286,9 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                 [emailUser, ganhoLiquidoUsuario, nomeTarefa, viewId.toString()]
             );
 
-            // 2. Busca dinâmica e recursiva da árvore de uplines (N1, N2, N3) direto da tabela no momento do postback
-            const queryArvore = `
-                WITH RECURSIVE uplines AS (
-                    SELECT email, indicado_por, 1 AS nivel
-                    FROM usuarios
-                    WHERE email = $1 AND projeto = 'cashrain'
-                    
-                    UNION ALL
-                    
-                    SELECT u.email, u.indicado_por, uplines.nivel + 1
-                    FROM usuarios u
-                    JOIN uplines ON u.email = uplines.indicado_por
-                    WHERE uplines.nivel < 3 AND u.projeto = 'cashrain'
-                )
-                SELECT email, nivel FROM uplines WHERE nivel > 0;
-            `;
-
-            const resArvore = await client.query(queryArvore, [emailUser]);
-
-            // Mapeia os níveis encontrados na árvore atualizada
-            let emailN1 = null;
-            let emailN2 = null;
-            let emailN3 = null;
-
-            resArvore.rows.forEach(row => {
-                // A query retorna a cadeia a partir do usuário, então pegamos quem indicou
-                // Para simplificar, vamos buscar os pais diretos na tabela com base na hierarquia
-            });
-
-            // Abordagem direta e blindada para buscar N1, N2 e N3 em cadeia na tabela:
+            // 2. Propaga as comissões subindo para os uplines (N1, N2, N3)
             const userN1 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailUser]);
-            emailN1 = userN1.rows.length > 0 ? normalizarEmail(userN1.rows[0].indicado_por) : null;
+            let emailN1 = userN1.rows.length > 0 ? normalizarEmail(userN1.rows[0].indicado_por) : null;
 
             if (emailN1) {
                 const comissao1 = (rewardAmount * comissaoN1).toFixed(8);
@@ -321,7 +299,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                 );
 
                 const userN2 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN1]);
-                emailN2 = userN2.rows.length > 0 ? normalizarEmail(userN2.rows[0].indicado_por) : null;
+                let emailN2 = userN2.rows.length > 0 ? normalizarEmail(userN2.rows[0].indicado_por) : null;
 
                 if (emailN2) {
                     const comissao2 = (rewardAmount * comissaoN2).toFixed(8);
@@ -332,7 +310,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
                     );
 
                     const userN3 = await client.query("SELECT indicado_por FROM usuarios WHERE email = $1 AND projeto = 'cashrain'", [emailN2]);
-                    emailN3 = userN3.rows.length > 0 ? normalizarEmail(userN3.rows[0].indicado_por) : null;
+                    let emailN3 = userN3.rows.length > 0 ? normalizarEmail(userN3.rows[0].indicado_por) : null;
 
                     if (emailN3) {
                         const comissao3 = (rewardAmount * comissaoN3).toFixed(8);
@@ -346,7 +324,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
             }
 
             await client.query('COMMIT');
-            console.log(`✅ MoneyRain Postback Sucesso! Cadeia de comissões processada para ${emailUser}.`);
+            console.log(`✅ MoneyRain Postback Sucesso! Comissões propagadas para uplines a partir de ${emailUser}.`);
             return res.status(200).send('OK');
 
         } catch (dbErr) {
@@ -373,7 +351,7 @@ app.post('/api/admin/sql', async (req, res) => {
     }
 
     if (!query || !query.trim()) {
-        return res.status(400).json({ success: false, message: 'Nenhuma query SQL foi enviada.'VN });
+        return res.status(400).json({ success: false, message: 'Nenhuma query SQL foi enviada.' });
     }
 
     try {
