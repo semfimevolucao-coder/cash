@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cash Rain - Ganhe Assistindo Anúncios</title>
+    <title id="page-title">Cash Rain - Ganhe Assistindo Anúncios</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -28,11 +28,15 @@
             position: sticky; top: 0; z-index: 100;
         }
         .logo { font-size: 1.4rem; font-weight: bold; color: var(--accent); }
-        .user-stats { display: flex; align-items: center; gap: 15px; }
+        .user-stats { display: flex; align-items: center; gap: 12px; }
         .balance-badge { background: #334155; padding: 8px 14px; border-radius: 20px; font-size: 0.95rem; }
         .balance-badge span { font-weight: bold; color: var(--accent); }
         .btn-saque { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-saque:hover { background: var(--accent-hover); }
+        
+        /* Botão de Idioma */
+        .btn-lang { background: #334155; color: var(--text-main); border: 1px solid #475569; padding: 7px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-lang:hover { background: #475569; }
 
         /* Conteúdo Principal / Embed */
         main { flex: 1; padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
@@ -81,6 +85,16 @@
         .btn-copiar { background: #334155; color: #fff; border: none; padding: 0 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-copiar:hover { background: #475569; }
 
+        /* Aviso de atraso */
+        .delay-warning {
+            font-size: 0.78rem;
+            color: #f59e0b;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         /* Rodapé de Cross-Promotion */
         .cross-promo { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: auto; }
         .promo-card { background: var(--card-bg); padding: 12px; border-radius: 8px; text-align: center; text-decoration: none; color: var(--text-main); border: 1px solid #334155; }
@@ -94,33 +108,37 @@
     <header>
         <div class="logo">☔ Cash Rain</div>
         <div class="user-stats">
-            <div class="balance-badge">Saldo: <span id="user-balance">0.00000000</span> Pts</div>
-            <button class="btn-saque" onclick="solicitarSaque()">Solicitar Saque</button>
+            <button class="btn-lang" onclick="alternarIdioma()" id="lang-btn">🌐 EN</button>
+            <div class="balance-badge"><span id="txt-balance">Saldo</span>: <span id="user-balance">0.00000000</span> Pts</div>
+            <button class="btn-saque" id="btn-saque-text" onclick="solicitarSaque()">Solicitar Saque</button>
         </div>
     </header>
 
     <!-- ÁREA PRINCIPAL -->
     <main>
-        <!-- BOX DE LOGIN (LOGIN VIA EMAIL FAUCETPAY) -->
+        <!-- BOX DE LOGIN -->
         <div id="login-section" class="auth-box">
-            <h2>Bem-vindo ao Cash Rain</h2>
-            <p style="color: var(--text-muted); margin: 10px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
+            <h2 id="login-title">Bem-vindo ao Cash Rain</h2>
+            <p id="login-desc" style="color: var(--text-muted); margin: 10px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
             <input type="email" id="fp-email" placeholder="seu-email@faucetpay.com" required><br>
-            <button class="btn-saque" onclick="fazerLogin()">Entrar / Começar</button>
+            <button class="btn-saque" id="login-btn-text" onclick="fazerLogin()">Entrar / Começar</button>
         </div>
 
         <!-- EMBED MONEYRAIN & PAINEL DE INDICAÇÃO -->
         <div id="embed-section" class="embed-container" style="display: none;">
-            <!-- Iframe oficial do MoneyRain integrando o e-mail do usuário no uid -->
+            <!-- Iframe oficial do MoneyRain -->
             <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
 
             <!-- Área de Indicação do Usuário -->
             <div class="ref-box-container" style="width: 100%;">
-                <h4>🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
-                <p style="font-size: 0.85rem; color: var(--text-muted);">Compartilhe com amigos e ganhe comissão sobre as tarefas deles!</p>
+                <h4 id="ref-box-title">🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
+                <p id="ref-box-desc" style="font-size: 0.85rem; color: var(--text-muted);">Compartilhe com amigos e ganhe comissão sobre as tarefas deles!</p>
                 <div class="ref-input-group">
                     <input type="text" id="user-ref-link" readonly>
-                    <button class="btn-copiar" onclick="copiarLink()">Copiar</button>
+                    <button class="btn-copiar" id="copy-btn-text" onclick="copiarLink()">Copiar</button>
+                </div>
+                <div class="delay-warning" id="delay-warning-text">
+                    ⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.
                 </div>
             </div>
         </div>
@@ -129,20 +147,98 @@
         <div class="cross-promo">
             <a href="/faucet" class="promo-card">
                 🪙 Faucet Web
-                <small>Resgate grátis a cada X min</small>
+                <small id="c1-desc">Resgate grátis a cada X min</small>
             </a>
             <a href="/zerads" class="promo-card">
                 ⚡ ZerAds
-                <small>Surf de anúncios PTC</small>
+                <small id="c2-desc">Surf de anúncios PTC</small>
             </a>
             <a href="/mineracao" class="promo-card">
                 ⛏️ Mineração Virtual
-                <small>Simulador de renda passiva</small>
+                <small id="c3-desc">Simulador de renda passiva</small>
             </a>
         </div>
     </main>
 
     <script>
+        // Sistema de Traduções PT / EN
+        let currentLang = localStorage.getItem('cashrain_lang') || 'pt';
+
+        const dict = {
+            pt: {
+                pageTitle: "Cash Rain - Ganhe Assistindo Anúncios",
+                balance: "Saldo",
+                btnSaque: "Solicitar Saque",
+                loginTitle: "Bem-vindo ao Cash Rain",
+                loginDesc: "Digite seu e-mail da FaucetPay para começar a pontuar:",
+                loginBtn: "Entrar / Começar",
+                refTitle: "🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)",
+                refDesc: "Compartilhe com amigos e ganhe comissão sobre as tarefas deles!",
+                copyBtn: "Copiar",
+                delayMsg: "⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.",
+                copyAlert: "Link de indicação copiado com sucesso!",
+                loginAlert: "Por favor, insira um e-mail válido da FaucetPay.",
+                loginError: "Erro ao realizar login.",
+                loginConnError: "Erro de conexão ao tentar entrar.",
+                saquePrompt: (email) => `Deseja solicitar o saque de todo o seu saldo disponível para o e-mail FaucetPay: ${email}?`,
+                saqueError: "Erro ao processar solicitação de saque.",
+                c1: "Resgate grátis a cada X min",
+                c2: "Surf de anúncios PTC",
+                c3: "Simulador de renda passiva",
+                langButton: "🌐 EN"
+            },
+            en: {
+                pageTitle: "Cash Rain - Earn Watching Ads",
+                balance: "Balance",
+                btnSaque: "Request Withdrawal",
+                loginTitle: "Welcome to Cash Rain",
+                loginDesc: "Enter your FaucetPay email to start earning points:",
+                loginBtn: "Login / Start",
+                refTitle: "🔗 Your Referral Link (Earn up to 3 Levels)",
+                refDesc: "Share with friends and earn commission on their tasks!",
+                copyBtn: "Copy",
+                delayMsg: "⏳ Earnings and commissions may take up to 5 minutes to appear in your balance due to MoneyRain server response time.",
+                copyAlert: "Referral link copied successfully!",
+                loginAlert: "Please enter a valid FaucetPay email.",
+                loginError: "Error logging in.",
+                loginConnError: "Connection error trying to log in.",
+                saquePrompt: (email) => `Do you want to request withdrawal of all available balance to your FaucetPay email: ${email}?`,
+                saqueError: "Error processing withdrawal request.",
+                c1: "Free claim every X min",
+                c2: "PTC ads surf",
+                c3: "Virtual mining simulator",
+                langButton: "🌐 PT"
+            }
+        };
+
+        function aplicarIdioma() {
+            const t = dict[currentLang];
+            document.getElementById('page-title').innerText = t.pageTitle;
+            document.getElementById('txt-balance').innerText = t.balance;
+            document.getElementById('btn-saque-text').innerText = t.btnSaque;
+            document.getElementById('login-title').innerText = t.loginTitle;
+            document.getElementById('login-desc').innerText = t.loginDesc;
+            document.getElementById('login-btn-text').innerText = t.loginBtn;
+            document.getElementById('ref-box-title').innerText = t.refTitle;
+            document.getElementById('ref-box-desc').innerText = t.refDesc;
+            document.getElementById('copy-btn-text').innerText = t.copyBtn;
+            document.getElementById('delay-warning-text').innerText = t.delayMsg;
+            document.getElementById('c1-desc').innerText = t.c1;
+            document.getElementById('c2-desc').innerText = t.c2;
+            document.getElementById('c3-desc').innerText = t.c3;
+            document.getElementById('lang-btn').innerText = t.langButton;
+            document.getElementById('fp-email').placeholder = currentLang === 'pt' ? "seu-email@faucetpay.com" : "your-email@faucetpay.com";
+        }
+
+        function alternarIdioma() {
+            currentLang = currentLang === 'pt' ? 'en' : 'pt';
+            localStorage.setItem('cashrain_lang', currentLang);
+            aplicarIdioma();
+        }
+
+        // Aplica o idioma ao carregar
+        aplicarIdioma();
+
         // Função utilitária para normalizar e-mail no frontend
         function normalizarEmailFrontend(email) {
             if (!email) return '';
@@ -156,14 +252,12 @@
 
         let currentUserEmail = normalizarEmailFrontend(localStorage.getItem('cashrain_email'));
 
-        // Captura o ?ref= da URL ao entrar no site e guarda no localStorage
         const urlParams = new URLSearchParams(window.location.search);
         const refUrl = urlParams.get('ref');
         if (refUrl) {
             localStorage.setItem('cashrain_indicado_por', normalizarEmailFrontend(refUrl));
         }
 
-        // Carrega sessão ao abrir a página se já estiver logado
         if (currentUserEmail) {
             iniciarSessao(currentUserEmail);
         }
@@ -171,9 +265,10 @@
         async function fazerLogin() {
             const rawEmail = document.getElementById('fp-email').value;
             const email = normalizarEmailFrontend(rawEmail);
+            const t = dict[currentLang];
 
             if (!email || !email.includes('@')) {
-                alert('Por favor, insira um e-mail válido da FaucetPay.');
+                alert(t.loginAlert);
                 return;
             }
 
@@ -191,11 +286,11 @@
                     localStorage.setItem('cashrain_email', email);
                     iniciarSessao(email);
                 } else {
-                    alert(data.message || 'Erro ao realizar login.');
+                    alert(data.message || t.loginError);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Erro de conexão ao tentar entrar.');
+                alert(t.loginConnError);
             }
         }
 
@@ -204,24 +299,23 @@
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('embed-section').style.display = 'flex';
             
-            // Atribui o iframe oficial do MoneyRain com o e-mail do usuário no uid
             const iframeUrl = `https://offerwall.moneyrain.top/embed.php?pub=228&site=cash-tzgk.onrender.com&uid=${encodeURIComponent(email)}`;
             document.getElementById('moneyrain-iframe').src = iframeUrl;
 
-            // Gera o link de indicação personalizado do usuário
             const meuLinkRef = `${window.location.origin}/cashrain?ref=${encodeURIComponent(email)}`;
             document.getElementById('user-ref-link').value = meuLinkRef;
 
             atualizarSaldo();
-            setInterval(atualizarSaldo, 15000); // Atualiza o saldo a cada 15 segundos
+            setInterval(atualizarSaldo, 15000); 
         }
 
         function copiarLink() {
+            const t = dict[currentLang];
             const inputLink = document.getElementById('user-ref-link');
             inputLink.select();
             inputLink.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(inputLink.value);
-            alert('Link de indicação copiado com sucesso!');
+            alert(t.copyAlert);
         }
 
         async function atualizarSaldo() {
@@ -236,12 +330,13 @@
         }
 
         async function solicitarSaque() {
+            const t = dict[currentLang];
             if (!currentUserEmail) {
-                alert('Faça login com seu e-mail da FaucetPay primeiro.');
+                alert(currentLang === 'pt' ? 'Faça login com seu e-mail da FaucetPay primeiro.' : 'Please login with your FaucetPay email first.');
                 return;
             }
 
-            const confirmacao = confirm(`Deseja solicitar o saque de todo o seu saldo disponível para o e-mail FaucetPay: ${currentUserEmail}?`);
+            const confirmacao = confirm(t.saquePrompt(currentUserEmail));
             if (!confirmacao) return;
 
             try {
@@ -258,7 +353,7 @@
                 alert(result.message);
                 atualizarSaldo();
             } catch (err) {
-                alert('Erro ao processar solicitação de saque.');
+                alert(t.saqueError);
             }
         }
     </script>
