@@ -39,6 +39,7 @@
 
     <label>Atalhos rápidos:</label>
     <div class="shortcuts">
+        <button class="btn-shortcut" onclick="verMetricasDivulgacao()">📊 Métricas de Divulgação</button>
         <button class="btn-shortcut" onclick="preencherEExecutar('SELECT id, email, chave_pix, status, pontos_solicitados, (pontos_solicitados / 99.0) as valor_usdt, data_solicitacao FROM saques WHERE status = \'Waiting\';')">💰 Saques Pendentes</button>
         <button class="btn-shortcut" onclick="preencherEExecutar('SELECT * FROM saques ORDER BY id DESC LIMIT 20;')">📜 Histórico de Saques</button>
         <button class="btn-shortcut" onclick="preencherEExecutar('SELECT * FROM usuarios;')">👥 Ver Usuários</button>
@@ -60,6 +61,27 @@
     function preencherEExecutar(sql) {
         document.getElementById('sql-query').value = sql;
         executarSQL();
+    }
+
+    function verMetricasDivulgacao() {
+        const sql = `SELECT 
+    COALESCE(utm_source, 'desconhecido') AS canal_origem,
+    COALESCE(utm_medium, 'indefinido') AS meio,
+    COALESCE(utm_campaign, 'geral') AS campanha,
+    COALESCE(email_afiliado, 'sistema') AS afiliado,
+    COUNT(CASE WHEN acao = 'visualizacao' THEN 1 END) AS total_visualizacoes,
+    COUNT(CASE WHEN acao = 'cadastro' THEN 1 END) AS total_cadastros,
+    ROUND(
+        (COUNT(CASE WHEN acao = 'cadastro' THEN 1 END)::NUMERIC / 
+        NULLIF(COUNT(CASE WHEN acao = 'visualizacao' THEN 1 END), 0)) * 100, 
+        2
+    ) AS taxa_conversao_pct
+FROM metricas_divulgacao
+WHERE projeto = 'cashrain'
+GROUP BY utm_source, utm_medium, utm_campaign, email_afiliado
+ORDER BY total_cadastros DESC, total_visualizacoes DESC;`;
+        
+        preencherEExecutar(sql);
     }
 
     async function marcarComoPago(saqueId) {
@@ -152,11 +174,11 @@
                         html += `<td>
                             <button class="btn-pago" onclick="marcarComoPago(${row.id})">✅ Marcar Pago</button>
                             <button class="btn-rejeitar" onclick="rejeitarSaque(${row.id})">❌ Rejeitar</button>
-                      </td>`;
-                  } else {
-                      html += `<td><span style="color: #94a3b8;">Finalizado</span></td>`;
-                  }
-              }
+                        </td>`;
+                    } else {
+                        html += `<td><span style="color: #94a3b8;">Finalizado</span></td>`;
+                    }
+                }
 
                 html += `</tr>`;
             });
@@ -181,7 +203,6 @@
         if (!data.rows || data.rows.length === 0) {
             textoFormatado += `Resultado: Nenhum registro encontrado. Linhas afetadas: ${data.rowCount}`;
         } else {
-            // Formata os dados em formato de texto estruturado / JSON legível para o chat
             textoFormatado += `Resultado (${data.rows.length} registros):\n\`\`\`json\n${JSON.stringify(data.rows, null, 2)}\n\`\`\``;
         }
 
