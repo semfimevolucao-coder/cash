@@ -5,19 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="page-title">Cash Rain - Ganhe Assistindo Anúncios</title>
 
-    <!-- ==================== MONETAG & ADSTERRA SCRIPTS (GLOBAL HEAD) ==================== -->
-    <!-- Monetag In-Page Push (Dreamy tag) -->
-    <script>(function(s){s.dataset.zone='12257460',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-    
-    <!-- Monetag Vignette Banner -->
-    <script>(function(s){s.dataset.zone='12257462',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-
-    <!-- Adsterra Pop-under -->
+    <!-- Apenas o Pop-under da Adsterra (Discreto, abre em nova aba no primeiro clique) -->
     <script data-cfasync="false" src="https://abscloud.org/1/e15045bd8dc4cc6af768b5e741b34159"></script>
-
-    <!-- Adsterra Social Bar -->
-    <script data-cfasync="false" src="https://bauval.org/14/4f2a530d5c8366dac93cc5b57be59ec2"></script>
-    <!-- ================================================================================= -->
 
     <style>
         :root {
@@ -32,10 +21,10 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
 
-        /* Topbar com Saldo e Saque */
+        /* Topbar Clean */
         header {
             background-color: var(--card-bg);
-            padding: 15px 20px;
+            padding: 15px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -44,81 +33,77 @@
         }
         .logo { font-size: 1.4rem; font-weight: bold; color: var(--accent); }
         .user-stats { display: flex; align-items: center; gap: 12px; }
-        .balance-badge { background: #334155; padding: 8px 14px; border-radius: 20px; font-size: 0.95rem; }
+        .balance-badge { background: #0f172a; padding: 8px 14px; border-radius: 20px; font-size: 0.95rem; border: 1px solid #334155; }
         .balance-badge span { font-weight: bold; color: var(--accent); }
         .btn-saque { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-saque:hover { background: var(--accent-hover); }
         
-        /* Botão de Idioma */
-        .btn-lang { background: #334155; color: var(--text-main); border: 1px solid #475569; padding: 7px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-lang:hover { background: #475569; }
+        .btn-lang { background: #0f172a; color: var(--text-main); border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-lang:hover { background: #334155; }
 
-        /* Container de Banners */
+        /* Container de Banners Centralizado e Limpo (Sem vazar nas laterais) */
         .banner-container {
             display: flex;
             justify-content: center;
-            margin: 15px auto;
-            padding: 0 10px;
+            align-items: center;
+            margin: 20px auto;
+            padding: 0 15px;
             width: 100%;
-            max-width: 1000px;
+            max-width: 728px;
         }
 
-        /* Conteúdo Principal / Embed */
-        main { flex: 1; padding: 20px; max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        /* Conteúdo Principal */
+        main { flex: 1; padding: 25px 15px; max-width: 850px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
 
-        /* Box de Login */
+        /* Box de Login Clean */
         .auth-box {
             background: var(--card-bg);
-            padding: 30px;
+            padding: 40px 25px;
             border-radius: 12px;
             text-align: center;
             border: 1px solid #334155;
-            max-width: 500px;
-            margin: 20px auto;
+            max-width: 480px;
+            margin: 40px auto;
             width: 100%;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
         .auth-box input {
-            padding: 12px; width: 90%; max-width: 380px; border-radius: 8px; border: 1px solid #475569;
-            background: #0f172a; color: #fff; margin-bottom: 15px; font-size: 1rem; text-align: center;
+            padding: 14px; width: 100%; max-width: 380px; border-radius: 8px; border: 1px solid #475569;
+            background: #0f172a; color: #fff; margin-bottom: 20px; font-size: 1rem; text-align: center;
         }
 
-        /* Iframe / Embed Container */
+        /* Embed Container Alinhado */
         .embed-container {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 15px;
+            padding: 20px;
             border: 1px solid #334155;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
-        iframe { width: 100%; height: 500px; border: none; border-radius: 8px; }
+        iframe { width: 100%; height: 520px; border: none; border-radius: 8px; background: #0f172a; }
 
-        /* Caixa de Indicação */
+        /* Caixa de Indicação Organizada */
         .ref-box-container {
             background: #0f172a;
-            border: 1px dashed #475569;
-            padding: 15px;
+            border: 1px solid #334155;
+            padding: 18px;
             border-radius: 8px;
-            margin-top: 15px;
-            text-align: left;
         }
-        .ref-box-container h4 { color: var(--accent); margin-bottom: 5px; font-size: 0.95rem; }
-        .ref-input-group { display: flex; gap: 8px; margin-top: 8px; }
-        .ref-input-group input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 0.85rem; }
-        .btn-copiar { background: #334155; color: #fff; border: none; padding: 0 14px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .ref-box-container h4 { color: var(--accent); margin-bottom: 6px; font-size: 0.95rem; }
+        .ref-input-group { display: flex; gap: 8px; margin-top: 10px; }
+        .ref-input-group input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 0.85rem; }
+        .btn-copiar { background: #334155; color: #fff; border: none; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-copiar:hover { background: #475569; }
 
-        /* Aviso de atraso */
         .delay-warning {
-            font-size: 0.78rem;
+            font-size: 0.8rem;
             color: #f59e0b;
-            margin-top: 8px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            margin-top: 10px;
         }
+
+        footer { text-align: center; padding: 25px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid #334155; margin-top: auto; }
     </style>
 </head>
 <body>
@@ -133,7 +118,7 @@
         </div>
     </header>
 
-    <!-- ==================== BANNER TOPO 1 (Adsterra 728x90) ==================== -->
+    <!-- BANNER TOPO (Adsterra 728x90 Centralizado) -->
     <div class="banner-container">
         <script>
             atOptions = {
@@ -152,9 +137,9 @@
         <!-- BOX DE LOGIN -->
         <div id="login-section" class="auth-box">
             <h2 id="login-title">Bem-vindo ao Cash Rain</h2>
-            <p id="login-desc" style="color: var(--text-muted); margin: 10px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
+            <p id="login-desc" style="color: var(--text-muted); margin: 12px 0 20px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
             <input type="email" id="fp-email" placeholder="seu-email@faucetpay.com" required><br>
-            <button class="btn-saque" id="login-btn-text" onclick="fazerLogin()">Entrar / Começar</button>
+            <button class="btn-saque" id="login-btn-text" onclick="fazerLogin()" style="width: 100%; padding: 12px;">Entrar / Começar</button>
         </div>
 
         <!-- EMBED MONEYRAIN & PAINEL DE INDICAÇÃO -->
@@ -162,8 +147,8 @@
             <!-- Iframe oficial do MoneyRain -->
             <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
 
-            <!-- Área de Indicação do Usuário -->
-            <div class="ref-box-container" style="width: 100%;">
+            <!-- Área de Indicação -->
+            <div class="ref-box-container">
                 <h4 id="ref-box-title">🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
                 <p id="ref-box-desc" style="font-size: 0.85rem; color: var(--text-muted);">Compartilhe com amigos e ganhe comissão sobre as tarefas deles!</p>
                 <div class="ref-input-group">
@@ -176,45 +161,22 @@
             </div>
         </div>
 
-        <!-- ==================== ADSTERRA NATIVE BANNER (1:4) ==================== -->
-        <div class="banner-container" style="flex-direction: column; align-items: center;">
-            <script async="async" data-cfasync="false" src="https://bauval.org/21/766882f2476c19557720418d7c2e2f3f"></script>
-            <div id="container-766882f2476c19557720418d7c2e2f3f"></div>
-        </div>
-
-        <!-- BANNER Lucre Mais Task (Cross-Promotion) -->
+        <!-- BANNER DE CROSS-PROMO (Lucre Mais Tasks) -->
         <div class="banner-container">
             <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank">
-                <img src="https://cash-tzgk.onrender.com/img/banner%201.png" alt="Lucre Mais Tasks" style="width:100%; max-width:728px; height:auto; display:block; margin:0 auto; border-radius:8px;">
+                <img src="https://cash-tzgk.onrender.com/img/banner%201.png" alt="Lucre Mais Tasks" style="width:100%; max-width:728px; height:auto; display:block; border-radius:8px;">
             </a>
-        </div>
-        
-        <!-- BANNER AADS AD UNIT 2461304 -->
-        <div class="banner-container">
-            <div id="frame" style="width: 100%; margin: auto; position: relative; z-index: 99998;">
-                <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461304/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
-            </div>
-        </div>
-        
-        <!-- BANNER ZERADS -->
-        <div class="banner-container">
-            <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0"></iframe>
         </div>
     </main>
 
-    <!-- ==================== BANNER RODAPÉ (Adsterra 728x90 Repetido) ==================== -->
+    <!-- BANNER RODAPÉ (ZerAds Centralizado) -->
     <div class="banner-container">
-        <script>
-            atOptions = {
-                'key' : 'ed7ae762454c285a95afb8866129ae36',
-                'format' : 'iframe',
-                'height' : 90,
-                'width' : 728,
-                'params' : {}
-            };
-        </script>
-        <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
+        <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px;"></iframe>
     </div>
+
+    <footer>
+        <p>&copy; 2026 Cash Rain. All rights reserved.</p>
+    </footer>
 
     <script>
         let currentUserEmail = '';
@@ -274,7 +236,6 @@
 
         function aplicarIdioma() {
             const t = dict[currentLang];
-            
             function setElementText(id, text) {
                 const el = document.getElementById(id);
                 if (el) el.innerText = text;
@@ -306,13 +267,11 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             aplicarIdioma();
-
             const urlParams = new URLSearchParams(window.location.search);
             const refUrl = urlParams.get('ref');
             if (refUrl) {
                 localStorage.setItem('cashrain_indicado_por', normalizarEmailFrontend(refUrl));
             }
-
             const savedEmail = normalizarEmailFrontend(localStorage.getItem('cashrain_email'));
             if (savedEmail) {
                 iniciarSessao(savedEmail);
@@ -346,7 +305,6 @@
                     alert(data.message || t.loginError);
                 }
             } catch (err) {
-                console.error(err);
                 alert(t.loginConnError);
             }
         }
@@ -390,9 +348,7 @@
                 const data = await res.json();
                 const balanceEl = document.getElementById('user-balance');
                 if (balanceEl) balanceEl.innerText = data.saldo || '0.00000000';
-            } catch (err) {
-                console.log('Erro ao buscar saldo.');
-            }
+            } catch (err) {}
         }
 
         async function solicitarSaque() {
@@ -402,18 +358,13 @@
                 return;
             }
 
-            const confirmacao = confirm(t.saquePrompt(currentUserEmail));
-            if (!confirmacao) return;
+            if (!confirm(t.saquePrompt(currentUserEmail))) return;
 
             try {
                 const response = await fetch('/api/solicitar-saque', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        projeto: 'cashrain',
-                        chave_pix_faucetpay: currentUserEmail,
-                        email: currentUserEmail
-                    })
+                    body: JSON.stringify({ projeto: 'cashrain', chave_pix_faucetpay: currentUserEmail, email: currentUserEmail })
                 });
                 const result = await response.json();
                 alert(result.message);
