@@ -56,7 +56,7 @@
             .side-banner { display: none; }
         }
 
-        /* Colunas Laterais Iguais (Adsterra) */
+        /* Colunas Laterais */
         .side-banner {
             background: var(--card-bg);
             border: 1px solid #334155;
@@ -70,6 +70,20 @@
             height: fit-content;
         }
         .side-banner h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Slots vazios para os 4 banners da direita */
+        .right-ad-slot {
+            width: 100%;
+            height: 180px; /* Ajuste conforme o tamanho que escolher (ex: 200x200 ou 160x600) */
+            border: 2px dashed #334155;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            background: #0f172a;
+        }
 
         /* Conteúdo Central */
         .main-center {
@@ -107,6 +121,22 @@
         }
         iframe { width: 100%; height: 550px; border: none; border-radius: 8px; background: #0f172a; }
 
+        /* Banner Lucre Mais Tasks Interno */
+        .internal-promo-banner {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .internal-promo-banner img {
+            width: 100%;
+            max-width: 728px;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #334155;
+        }
+
         /* Caixa de Indicação Organizada */
         .ref-box-container {
             background: #0f172a;
@@ -126,7 +156,7 @@
             margin-top: 10px;
         }
 
-        /* Grid de Banners Inferior (ZerAds bem juntinhos) */
+        /* Grid de Banners Inferior (ZerAds coladinhos sem espaço branco) */
         .bottom-grid-section {
             max-width: 800px;
             margin: 20px auto 40px auto;
@@ -137,11 +167,11 @@
             background: var(--card-bg);
             border: 1px solid #334155;
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         .ads-grid-title {
             font-size: 0.85rem;
@@ -154,7 +184,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px; /* <--- Deixa os banners coladinhos e próximos uns dos outros */
+            gap: 2px; /* Mantém os 5 zerads perfeitamente colados */
             width: 100%;
         }
         .zerads-slot {
@@ -216,6 +246,13 @@
                 <!-- Iframe oficial do MoneyRain -->
                 <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
 
+                <!-- Banner Lucre Mais Tasks ACIMA da área de indicação -->
+                <div class="internal-promo-banner">
+                    <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank">
+                        <img src="https://cash-tzgk.onrender.com/img/banner%201.png" alt="Lucre Mais Tasks">
+                    </a>
+                </div>
+
                 <!-- Área de Indicação -->
                 <div class="ref-box-container">
                     <h4 id="ref-box-title">🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
@@ -232,24 +269,24 @@
 
         </main>
 
-        <!-- COLUNA DIREITA (Adsterra Native Banner Igual à Esquerda) -->
+        <!-- COLUNA DIREITA (4 Espaços em Branco para você colocar seus 4 banners) -->
         <aside class="side-banner">
-            <h3>Patrocinado</h3>
-            <div style="width: 100%; overflow: hidden;">
-                <script async="async" data-cfasync="false" src="https://bauval.org/21/766882f2476c19557720418d7c2e2f3f"></script>
-                <div id="container-766882f2476c19557720418d7c2e2f3f"></div>
-            </div>
+            <h3>Destaques</h3>
+            <div class="right-ad-slot">[Banner 1 Aqui]</div>
+            <div class="right-ad-slot">[Banner 2 Aqui]</div>
+            <div class="right-ad-slot">[Banner 3 Aqui]</div>
+            <div class="right-ad-slot">[Banner 4 Aqui]</div>
         </aside>
 
     </div>
 
-    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds + Adsterra + A-Ads Juntinhos) -->
+    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds + Adsterra + A-Ads bem juntinhos) -->
     <div class="bottom-grid-section">
         <div class="ads-grid-box">
             <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
             
             <div class="zerads-stack">
-                <!-- 5 Banners ZerAds Centralizados e Próximos -->
+                <!-- 5 Banners ZerAds perfeitamente colados -->
                 <div class="zerads-slot"></div>
                 <div class="zerads-slot"></div>
                 <div class="zerads-slot"></div>
@@ -258,7 +295,7 @@
             </div>
 
             <!-- Adsterra Banner 728x90 -->
-            <div style="width: 100%; display: flex; justify-content: center; margin-top: 5px;">
+            <div style="width: 100%; display: flex; justify-content: center; margin-top: 2px;">
                 <script>
                     atOptions = {
                         'key' : 'ed7ae762454c285a95afb8866129ae36',
@@ -272,7 +309,7 @@
             </div>
 
             <!-- A-Ads Responsivo -->
-            <div style="width: 100%; max-width: 728px; margin: 5px auto 0 auto; position: relative; z-index: 99998;">
+            <div style="width: 100%; max-width: 728px; margin: 2px auto 0 auto; position: relative; z-index: 99998;">
                 <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461304/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
             </div>
         </div>
@@ -284,14 +321,13 @@
 
     <!-- SCRIPT DE CARREGAMENTO DOS 5 ZERADS E FUNCIONALIDADES -->
     <script>
-        // Carrega os 5 slots do ZerAds preenchendo as divs correspondentes de forma limpa
         document.querySelectorAll('.zerads-slot').forEach(slot => {
             fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
                 .then(response => response.text())
                 .then(data => {
                     if (!data.includes("*BLANK*")) {
                         data = data.replace('<meta http-equiv="refresh" content="280">', '');
-                        slot.innerHTML = "<iframe style='border:none; width:728px; height:90px;'></iframe>";
+                        slot.innerHTML = "<iframe style='border:none; width:728px; height:90px; display:block; margin:0 auto;'></iframe>";
                         slot.querySelector('iframe').srcdoc = data;
                     } else {
                         slot.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 4px;'><div style='position: absolute; color: #999; font-size: 28px; top: 30%; left: 35%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
