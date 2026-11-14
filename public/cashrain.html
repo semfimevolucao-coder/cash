@@ -126,7 +126,7 @@
             margin-top: 10px;
         }
 
-        /* Grid de Banners Inferior (ZerAds Centralizados um abaixo do outro) */
+        /* Grid de Banners Inferior */
         .bottom-grid-section {
             max-width: 800px;
             margin: 20px auto 40px auto;
@@ -228,17 +228,37 @@
 
     </div>
 
-    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds Centralizados um abaixo do outro) -->
+    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds + Adsterra + A-Ads Centralizados) -->
     <div class="bottom-grid-section">
         <div class="ads-grid-box">
             <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
             
             <div class="zerads-stack">
-                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
-                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
-                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
-                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
-                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
+                <!-- 5 Banners ZerAds Centralizados com classes únicas -->
+                <div class="zerads-slot" style="display: none;"></div>
+                <div class="zerads-slot" style="display: none;"></div>
+                <div class="zerads-slot" style="display: none;"></div>
+                <div class="zerads-slot" style="display: none;"></div>
+                <div class="zerads-slot" style="display: none;"></div>
+            </div>
+
+            <!-- Adsterra Banner 728x90 -->
+            <div style="width: 100%; display: flex; justify-content: center; margin-top: 10px;">
+                <script>
+                    atOptions = {
+                        'key' : 'ed7ae762454c285a95afb8866129ae36',
+                        'format' : 'iframe',
+                        'height' : 90,
+                        'width' : 728,
+                        'params' : {}
+                    };
+                </script>
+                <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
+            </div>
+
+            <!-- A-Ads Responsivo -->
+            <div style="width: 100%; max-width: 728px; margin: 10px auto 0 auto; position: relative; z-index: 99998;">
+                <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461304/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
             </div>
         </div>
     </div>
@@ -247,8 +267,24 @@
         <p>&copy; 2026 Cash Rain. All rights reserved.</p>
     </footer>
 
-    <!-- SCRIPT DE LOGIN E FUNCIONALIDADES -->
+    <!-- SCRIPT DE CARREGAMENTO DOS 5 ZERADS E FUNCIONALIDADES -->
     <script>
+        // Carrega os 5 slots do ZerAds dinamicamente sem conflito de IDs
+        document.querySelectorAll('.zerads-slot').forEach(slot => {
+            fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
+                .then(response => response.text())
+                .then(data => {
+                    slot.style.display = 'inline-block';
+                    if (!data.includes("*BLANK*")) {
+                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
+                        slot.innerHTML = "<iframe style='border:none;' width='728' height='90'></iframe>";
+                        slot.querySelector('iframe').srcdoc = data;
+                    } else {
+                        slot.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 8px;'><div style='position: absolute; color: #999; font-size: 32px; top: 25%; left: 32%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
+                    }
+                }).catch(e => {});
+        });
+
         let currentUserEmail = '';
 
         function normalizarEmailFrontend(email) {
