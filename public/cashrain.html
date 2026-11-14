@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="page-title">Cash Rain - Ganhe Assistindo Anúncios</title>
 
-    <!-- Apenas o Pop-under da Adsterra (Discreto, abre em nova aba no primeiro clique) -->
-    <script data-cfasync="false" src="https://abscloud.org/1/e15045bd8dc4cc6af768b5e741b34159"></script>
-
     <style>
         :root {
             --bg-color: #0f172a;
@@ -41,19 +38,60 @@
         .btn-lang { background: #0f172a; color: var(--text-main); border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-lang:hover { background: #334155; }
 
-        /* Container de Banners Centralizado e Limpo (Sem vazar nas laterais) */
-        .banner-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* Layout de 3 Colunas (Estilo Exemplo) */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr 240px;
+            gap: 20px;
+            max-width: 1350px;
             margin: 20px auto;
             padding: 0 15px;
             width: 100%;
-            max-width: 728px;
         }
 
-        /* Conteúdo Principal */
-        main { flex: 1; padding: 25px 15px; max-width: 850px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        @media (max-width: 1024px) {
+            .layout-grid {
+                grid-template-columns: 1fr; /* No mobile/tablet empilha tudo de forma limpa */
+            }
+            .side-banner { display: none; } /* Oculta colunas laterais em telas pequenas para não quebrar */
+        }
+
+        /* Colunas Laterais de Anúncios / Cross-Promo */
+        .side-banner {
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            text-align: center;
+            height: fit-content;
+        }
+        .side-banner h3 { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .promo-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: 0.2s;
+        }
+        .promo-box:hover { border-color: var(--accent); }
+        .promo-box img { width: 100%; border-radius: 6px; margin-bottom: 8px; }
+        .promo-box h4 { color: var(--accent); font-size: 0.95rem; margin-bottom: 4px; }
+        .promo-box p { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Conteúdo Central */
+        .main-center {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
 
         /* Box de Login Clean */
         .auth-box {
@@ -62,8 +100,6 @@
             border-radius: 12px;
             text-align: center;
             border: 1px solid #334155;
-            max-width: 480px;
-            margin: 40px auto;
             width: 100%;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
@@ -81,8 +117,9 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
+            width: 100%;
         }
-        iframe { width: 100%; height: 520px; border: none; border-radius: 8px; background: #0f172a; }
+        iframe { width: 100%; height: 550px; border: none; border-radius: 8px; background: #0f172a; }
 
         /* Caixa de Indicação Organizada */
         .ref-box-container {
@@ -103,6 +140,38 @@
             margin-top: 10px;
         }
 
+        /* Grid de Banners Inferior (Estemplo Exemplo 2) */
+        .bottom-grid-section {
+            max-width: 1350px;
+            margin: 20px auto 40px auto;
+            padding: 0 15px;
+            width: 100%;
+        }
+        .ads-grid-box {
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .ads-grid-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .banner-flex-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
         footer { text-align: center; padding: 25px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid #334155; margin-top: auto; }
     </style>
 </head>
@@ -118,66 +187,109 @@
         </div>
     </header>
 
-    <!-- BANNER TOPO (Adsterra 728x90 Centralizado) -->
-    <div class="banner-container">
-        <script>
-            atOptions = {
-                'key' : 'ed7ae762454c285a95afb8866129ae36',
-                'format' : 'iframe',
-                'height' : 90,
-                'width' : 728,
-                'params' : {}
-            };
-        </script>
-        <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
+    <!-- LAYOUT PRINCIPAL DE 3 COLUNAS -->
+    <div class="layout-grid">
+        
+        <!-- COLUNA ESQUERDA (Banner Lateral / Promo) -->
+        <aside class="side-banner">
+            <h3>Parceiros</h3>
+            <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank" class="promo-box">
+                <img src="https://cash-tzgk.onrender.com/img/banner%201.png" alt="Lucre Mais">
+                <h4>Lucre Mais Tasks</h4>
+                <p>Ganhe com robôs no Telegram</p>
+            </a>
+            <!-- Adsterra Native Banner 1:4 na Lateral Esquerda -->
+            <div style="width: 100%; overflow: hidden;">
+                <script async="async" data-cfasync="false" src="https://bauval.org/21/766882f2476c19557720418d7c2e2f3f"></script>
+                <div id="container-766882f2476c19557720418d7c2e2f3f"></div>
+            </div>
+        </aside>
+
+        <!-- COLUNA CENTRAL (Conteúdo principal / MoneyRain) -->
+        <main class="main-center">
+            
+            <!-- BANNER TOPO CENTRAL (Adsterra 728x90) -->
+            <div style="display: flex; justify-content: center; width: 100%; overflow: hidden;">
+                <script>
+                    atOptions = {
+                        'key' : 'ed7ae762454c285a95afb8866129ae36',
+                        'format' : 'iframe',
+                        'height' : 90,
+                        'width' : 728,
+                        'params' : {}
+                    };
+                </script>
+                <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
+            </div>
+
+            <!-- BOX DE LOGIN -->
+            <div id="login-section" class="auth-box">
+                <h2 id="login-title">Bem-vindo ao Cash Rain</h2>
+                <p id="login-desc" style="color: var(--text-muted); margin: 12px 0 20px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
+                <input type="email" id="fp-email" placeholder="seu-email@faucetpay.com" required><br>
+                <button class="btn-saque" id="login-btn-text" onclick="fazerLogin()" style="width: 100%; padding: 12px;">Entrar / Começar</button>
+            </div>
+
+            <!-- EMBED MONEYRAIN & PAINEL DE INDICAÇÃO -->
+            <div id="embed-section" class="embed-container" style="display: none;">
+                <!-- Iframe oficial do MoneyRain -->
+                <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
+
+                <!-- Área de Indicação -->
+                <div class="ref-box-container">
+                    <h4 id="ref-box-title">🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
+                    <p id="ref-box-desc" style="font-size: 0.85rem; color: var(--text-muted);">Compartilhe com amigos e ganhe comissão sobre as tarefas deles!</p>
+                    <div class="ref-input-group">
+                        <input type="text" id="user-ref-link" readonly>
+                        <button class="btn-copiar" id="copy-btn-text" onclick="copiarLink()">Copiar</button>
+                    </div>
+                    <div class="delay-warning" id="delay-warning-text">
+                        ⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- COLUNA DIREITA (Banner Lateral / Promo) -->
+        <aside class="side-banner">
+            <h3>Destaque</h3>
+            <a href="https://zerads.com/index.php?view=site&id=12423" target="_blank" class="promo-box">
+                <h4 style="color: #10b981; margin-bottom: 5px;">ZerAds Network</h4>
+                <p>Anuncie seus links e consiga tráfego real instantâneo.</p>
+            </a>
+            <!-- Espaço extra para criativos ou anúncios -->
+            <div style="padding: 10px; background: #0f172a; border-radius: 8px; width: 100%; border: 1px dashed #334155;">
+                <p style="font-size: 0.8rem; color: #94a3b8;">💡 Dica: Compartilhe seu link de indicação para lucrar em 3 níveis automaticamente.</p>
+            </div>
+        </aside>
+
     </div>
 
-    <!-- ÁREA PRINCIPAL -->
-    <main>
-        <!-- BOX DE LOGIN -->
-        <div id="login-section" class="auth-box">
-            <h2 id="login-title">Bem-vindo ao Cash Rain</h2>
-            <p id="login-desc" style="color: var(--text-muted); margin: 12px 0 20px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
-            <input type="email" id="fp-email" placeholder="seu-email@faucetpay.com" required><br>
-            <button class="btn-saque" id="login-btn-text" onclick="fazerLogin()" style="width: 100%; padding: 12px;">Entrar / Começar</button>
-        </div>
+    <!-- SEÇÃO INFERIOR EM GRID DE BANNERS (Estilo Exemplo 2) -->
+    <div class="bottom-grid-section">
+        <div class="ads-grid-box">
+            <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
+            
+            <div class="banner-flex-row">
+                <!-- Banner ZerAds Centralizado -->
+                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
+            </div>
 
-        <!-- EMBED MONEYRAIN & PAINEL DE INDICAÇÃO -->
-        <div id="embed-section" class="embed-container" style="display: none;">
-            <!-- Iframe oficial do MoneyRain -->
-            <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
-
-            <!-- Área de Indicação -->
-            <div class="ref-box-container">
-                <h4 id="ref-box-title">🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
-                <p id="ref-box-desc" style="font-size: 0.85rem; color: var(--text-muted);">Compartilhe com amigos e ganhe comissão sobre as tarefas deles!</p>
-                <div class="ref-input-group">
-                    <input type="text" id="user-ref-link" readonly>
-                    <button class="btn-copiar" id="copy-btn-text" onclick="copiarLink()">Copiar</button>
-                </div>
-                <div class="delay-warning" id="delay-warning-text">
-                    ⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.
+            <div class="banner-flex-row">
+                <!-- Banner A-Ads Responsivo -->
+                <div id="frame" style="width: 100%; max-width: 728px; margin: auto; position: relative; z-index: 99998;">
+                    <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461304/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
                 </div>
             </div>
         </div>
-
-        <!-- BANNER DE CROSS-PROMO (Lucre Mais Tasks) -->
-        <div class="banner-container">
-            <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank">
-                <img src="https://cash-tzgk.onrender.com/img/banner%201.png" alt="Lucre Mais Tasks" style="width:100%; max-width:728px; height:auto; display:block; border-radius:8px;">
-            </a>
-        </div>
-    </main>
-
-    <!-- BANNER RODAPÉ (ZerAds Centralizado) -->
-    <div class="banner-container">
-        <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px;"></iframe>
     </div>
 
     <footer>
         <p>&copy; 2026 Cash Rain. All rights reserved.</p>
     </footer>
 
+    <!-- SCRIPT DE LOGIN E FUNCIONALIDADES -->
     <script>
         let currentUserEmail = '';
 
