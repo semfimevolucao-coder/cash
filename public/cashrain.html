@@ -71,18 +71,14 @@
         }
         .side-banner h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Slots vazios para os 4 banners da direita */
-        .right-ad-slot {
-            width: 100%;
-            height: 180px; /* Ajuste conforme o tamanho que escolher (ex: 200x200 ou 160x600) */
-            border: 2px dashed #334155;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            background: #0f172a;
+        /* Ajuste para os banners da direita não estourarem a coluna de 240px */
+        .side-banner img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+        .side-banner iframe {
+            max-width: 100% !important;
         }
 
         /* Conteúdo Central */
@@ -119,7 +115,7 @@
             gap: 20px;
             width: 100%;
         }
-        iframe { width: 100%; height: 550px; border: none; border-radius: 8px; background: #0f172a; }
+        #moneyrain-iframe { width: 100%; height: 550px; border: none; border-radius: 8px; background: #0f172a; }
 
         /* Banner Lucre Mais Tasks Interno */
         .internal-promo-banner {
@@ -184,7 +180,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px; /* Mantém os 5 zerads perfeitamente colados */
+            gap: 2px;
             width: 100%;
         }
         .zerads-slot {
@@ -269,24 +265,71 @@
 
         </main>
 
-        <!-- COLUNA DIREITA (4 Espaços em Branco para você colocar seus 4 banners) -->
+        <!-- COLUNA DIREITA (Com os 4 Banners Solicitados) -->
         <aside class="side-banner">
             <h3>Destaques</h3>
-            <div class="right-ad-slot">[Banner 1 Aqui]</div>
-            <div class="right-ad-slot">[Banner 2 Aqui]</div>
-            <div class="right-ad-slot">[Banner 3 Aqui]</div>
-            <div class="right-ad-slot">[Banner 4 Aqui]</div>
+            
+            <!-- Banner 1: ZerAds 300 -->
+            <div>
+                <script>
+                fetch('https://zerads.com/ad/ad.php?ref=12423&width=300')
+                  .then(response => response.text())
+                  .then(data => {
+                    const elements = document.querySelectorAll('[id="ZerAds300"]');
+                    for (const element of elements) {
+                        if (element.style.display === 'none') {
+                        element.style.display = 'inline-block';
+                        if(data.includes("*BLANK*") == false) {
+                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
+                        element.innerHTML = "<iframe style='border:none;' width='200' height='200'></iframe>";
+                        element.querySelector('iframe').srcdoc = data;
+                        } else {
+                        element.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 200px; height: 200px; background-color: rgba(200, 200, 200, 0.1); position: relative;'><div style='position: absolute; color: #999; font-size: 20px; top: 40%; left: 15%; font-family: Arial; '><i>Advertise Here</i></div></div></a>";
+                        }
+                        break;
+                        }
+                    }
+                  });
+                </script>
+                <div id="ZerAds300" style="display: none;"></div>
+            </div>
+
+            <!-- Banner 2: Script Externo -->
+            <div>
+                <script>
+                (function(cybb){
+                var d = document,
+                    s = d.createElement('script'),
+                    l = d.currentScript || d.scripts[d.scripts.length - 1];
+                s.settings = cybb || {};
+                s.src = "\/\/quarrelsomebitter.com\/bTX\/VAs.dXG\/lL0\/Y-WccT\/Oecmm9uuUZoUKlYkvPVT\/c_2GMbj\/Q\/0fMojyUOtGNmzAYoyENsDZQFyUO\/Qr";
+                s.async = true;
+                s.referrerPolicy = 'no-referrer-when-downgrade';
+                l.parentNode.insertBefore(s, l);
+                })({})
+                </script>
+            </div>
+
+            <!-- Banner 3: LtcScrapper -->
+            <div>
+                <a href="https://ltcscrapper.com/?ref=dccd43"><img src="https://cdn.jsdelivr.net/gh/affiliateproteam/zergirls-assets@main/ltcscrapper-banner-300x250.gif" width="200" height="166" alt="LtcScrapper"></a>
+            </div>
+
+            <!-- Banner 4: EasyHits4U -->
+            <div>
+                <a href="https://www.easyhits4u.com/?ref=chensonbh763"><img src="https://www.easyhits4u.com/img/banners/125x125_1.gif" width="125" height="125" alt="EasyHits4U" border="0"/></a>
+            </div>
+
         </aside>
 
     </div>
 
-    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds + Adsterra + A-Ads bem juntinhos) -->
+    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds + Adsterra + A-Ads) -->
     <div class="bottom-grid-section">
         <div class="ads-grid-box">
             <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
             
             <div class="zerads-stack">
-                <!-- 5 Banners ZerAds perfeitamente colados -->
                 <div class="zerads-slot"></div>
                 <div class="zerads-slot"></div>
                 <div class="zerads-slot"></div>
