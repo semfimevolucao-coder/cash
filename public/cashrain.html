@@ -38,7 +38,7 @@
         .btn-lang { background: #0f172a; color: var(--text-main); border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-lang:hover { background: #334155; }
 
-        /* Layout de 3 Colunas Simétricas */
+        /* Layout de 3 Colunas Desktop */
         .layout-grid {
             display: grid;
             grid-template-columns: 240px 1fr 240px;
@@ -49,11 +49,14 @@
             width: 100%;
         }
 
+        /* CELULAR / TELAS PEQUENAS: Oculta as laterais e expande o centro */
         @media (max-width: 1024px) {
             .layout-grid {
                 grid-template-columns: 1fr;
             }
-            .side-banner { display: none; }
+            .side-banner {
+                display: none !important; /* Some totalmente no celular */
+            }
         }
 
         /* Colunas Laterais */
@@ -71,7 +74,6 @@
         }
         .side-banner h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Ajuste para os banners da direita não estourarem a coluna de 240px */
         .side-banner img {
             max-width: 100%;
             height: auto;
@@ -152,7 +154,7 @@
             margin-top: 10px;
         }
 
-        /* Grid de Banners Inferior (ZerAds coladinhos sem espaço branco) */
+        /* Grid de Banners Inferior */
         .bottom-grid-section {
             max-width: 800px;
             margin: 20px auto 40px auto;
@@ -217,7 +219,7 @@
     <!-- LAYOUT PRINCIPAL DE 3 COLUNAS -->
     <div class="layout-grid">
         
-        <!-- COLUNA ESQUERDA (Adsterra Native Banner) -->
+        <!-- COLUNA ESQUERDA (Some no celular) -->
         <aside class="side-banner">
             <h3>Patrocinado</h3>
             <div style="width: 100%; overflow: hidden;">
@@ -226,7 +228,7 @@
             </div>
         </aside>
 
-        <!-- COLUNA CENTRAL (MoneyRain Sem Anúncios Acima) -->
+        <!-- COLUNA CENTRAL (Sempre visível) -->
         <main class="main-center">
             
             <!-- BOX DE LOGIN -->
@@ -265,7 +267,7 @@
 
         </main>
 
-        <!-- COLUNA DIREITA (Com os 4 Banners Solicitados) -->
+        <!-- COLUNA DIREITA (Some no celular) -->
         <aside class="side-banner">
             <h3>Destaques</h3>
             
@@ -324,7 +326,7 @@
 
     </div>
 
-    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds + Adsterra + A-Ads) -->
+    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (Visível em todas as telas) -->
     <div class="bottom-grid-section">
         <div class="ads-grid-box">
             <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
