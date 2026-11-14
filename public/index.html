@@ -37,7 +37,7 @@
 
         .hero {
             max-width: 800px;
-            margin: 30px auto 40px auto;
+            margin: 20px auto 40px auto;
             text-align: center;
             padding: 0 20px;
         }
@@ -79,9 +79,26 @@
         }
         .btn-cta:hover { background: var(--accent-hover); }
 
+        /* Banner Promocional Interno (Cross-Promotion) */
+        .promo-section {
+            max-width: 728px;
+            margin: 30px auto;
+            padding: 0 15px;
+            text-align: center;
+        }
+        .promo-section img {
+            width: 100%;
+            max-width: 728px;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            display: block;
+            margin: 0 auto;
+        }
+
         .features {
             max-width: 1000px;
-            margin: 50px auto;
+            margin: 30px auto;
             padding: 0 20px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -95,6 +112,53 @@
         }
         .feature-card h3 { color: var(--accent); margin-bottom: 10px; font-size: 1.2rem; }
         .feature-card p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
+
+        /* Seção Inferior de Monetização Extra */
+        .bottom-grid-section {
+            max-width: 800px;
+            margin: 20px auto 40px auto;
+            padding: 0 15px;
+            width: 100%;
+        }
+        .ads-grid-box {
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .ads-grid-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 5px;
+        }
+        .zerads-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            width: 100%;
+        }
+        .zerads-slot {
+            height: 90px;
+            width: 728px;
+            max-width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .zerads-slot iframe {
+            height: 90px !important;
+            width: 728px !important;
+            max-width: 100% !important;
+            border: none;
+            background: transparent;
+        }
 
         footer { text-align: center; padding: 30px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid #334155; margin-top: auto; }
     </style>
@@ -123,6 +187,13 @@
             </div>
         </section>
 
+        <!-- BANNER PROMOCIONAL INTERNO (Cross-Promotion Lucre Mais Tasks) -->
+        <div class="promo-section">
+            <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank">
+                <img src="/img/banner%201.png" alt="Lucre Mais Tasks">
+            </a>
+        </div>
+
         <section class="features">
             <div class="feature-card">
                 <h3 id="f1-title">⚡ Instant FaucetPay Payouts</h3>
@@ -137,9 +208,43 @@
                 <p id="f3-desc">Access high-paying offers, PTC ads, and surfing tasks updated 24/7 to guarantee endless earning opportunities.</p>
             </div>
         </section>
+
+        <!-- SEÇÃO INFERIOR DE MONETIZAÇÃO (5 ZerAds + Adsterra + A-Ads) -->
+        <div class="bottom-grid-section">
+            <div class="ads-grid-box">
+                <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
+                
+                <div class="zerads-stack">
+                    <div class="zerads-slot"></div>
+                    <div class="zerads-slot"></div>
+                    <div class="zerads-slot"></div>
+                    <div class="zerads-slot"></div>
+                    <div class="zerads-slot"></div>
+                </div>
+
+                <!-- Adsterra Banner 728x90 -->
+                <div style="width: 100%; display: flex; justify-content: center; margin-top: 2px;">
+                    <script>
+                        atOptions = {
+                            'key' : 'ed7ae762454c285a95afb8866129ae36',
+                            'format' : 'iframe',
+                            'height' : 90,
+                            'width' : 728,
+                            'params' : {}
+                        };
+                    </script>
+                    <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
+                </div>
+
+                <!-- A-Ads Adaptativo -->
+                <div style="width: 100%; max-width: 728px; margin: 2px auto 0 auto; position: relative; z-index: 99998;">
+                    <iframe data-aa='2461303' src='//acceptable.a-ads.com/2461303/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <!-- SCRIPT DE CARREGAMENTO DO BANNER ZERADS -->
+    <!-- SCRIPT DE CARREGAMENTO DOS BANNERS ZERADS -->
     <script>
         fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
           .then(response => response.text())
@@ -159,16 +264,22 @@
                 }
             }
           });
+
+        document.querySelectorAll('.zerads-slot').forEach(slot => {
+            fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
+                .then(response => response.text())
+                .then(data => {
+                    if (!data.includes("*BLANK*")) {
+                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
+                        slot.innerHTML = "<iframe style='border:none; width:728px; height:90px; display:block; margin:0 auto;'></iframe>";
+                        slot.querySelector('iframe').srcdoc = data;
+                    } else {
+                        slot.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 4px;'><div style='position: absolute; color: #999; font-size: 28px; top: 30%; left: 35%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
+                    }
+                }).catch(e => {});
+        });
     </script>
 
-        <!-- BANNER AADS AD UNIT 2461303 -->
-    <div class="banner-container">
-        <div id="frame" style="width: 100%; margin: auto; position: relative; z-index: 99998;">
-            <iframe data-aa='2461303' src='//acceptable.a-ads.com/2461303/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
-        </div>
-    </div>
-
-    
     <footer>
         <p>&copy; 2026 Cash Rain. All rights reserved.</p>
     </footer>
@@ -186,7 +297,7 @@
         if (utmCampaign) localStorage.setItem('cashrain_utm_campaign', utmCampaign);
         if (refParam) localStorage.setItem('cashrain_indicado_por', refParam);
 
-        // Dispara métrica de visualização (para rastrear cliques e exibições do tráfego pago)
+        // Dispara métrica de visualização
         fetch('/api/registrar-metrica', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
