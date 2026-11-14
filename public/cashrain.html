@@ -38,7 +38,7 @@
         .btn-lang { background: #0f172a; color: var(--text-main); border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-lang:hover { background: #334155; }
 
-        /* Layout de 3 Colunas (Estilo Exemplo) */
+        /* Layout de 3 Colunas Simétricas */
         .layout-grid {
             display: grid;
             grid-template-columns: 240px 1fr 240px;
@@ -51,12 +51,12 @@
 
         @media (max-width: 1024px) {
             .layout-grid {
-                grid-template-columns: 1fr; /* No mobile/tablet empilha tudo de forma limpa */
+                grid-template-columns: 1fr;
             }
-            .side-banner { display: none; } /* Oculta colunas laterais em telas pequenas para não quebrar */
+            .side-banner { display: none; }
         }
 
-        /* Colunas Laterais de Anúncios / Cross-Promo */
+        /* Colunas Laterais Iguais (Adsterra) */
         .side-banner {
             background: var(--card-bg);
             border: 1px solid #334155;
@@ -69,21 +69,7 @@
             text-align: center;
             height: fit-content;
         }
-        .side-banner h3 { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .promo-box {
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 8px;
-            padding: 12px;
-            width: 100%;
-            text-decoration: none;
-            color: var(--text-main);
-            transition: 0.2s;
-        }
-        .promo-box:hover { border-color: var(--accent); }
-        .promo-box img { width: 100%; border-radius: 6px; margin-bottom: 8px; }
-        .promo-box h4 { color: var(--accent); font-size: 0.95rem; margin-bottom: 4px; }
-        .promo-box p { font-size: 0.75rem; color: var(--text-muted); }
+        .side-banner h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
         /* Conteúdo Central */
         .main-center {
@@ -140,9 +126,9 @@
             margin-top: 10px;
         }
 
-        /* Grid de Banners Inferior (Estemplo Exemplo 2) */
+        /* Grid de Banners Inferior (ZerAds Centralizados um abaixo do outro) */
         .bottom-grid-section {
-            max-width: 1350px;
+            max-width: 800px;
             margin: 20px auto 40px auto;
             padding: 0 15px;
             width: 100%;
@@ -155,20 +141,20 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
         .ads-grid-title {
             font-size: 0.85rem;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1.5px;
+            margin-bottom: 5px;
         }
-        .banner-flex-row {
+        .zerads-stack {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
+            gap: 15px;
             width: 100%;
         }
 
@@ -190,38 +176,18 @@
     <!-- LAYOUT PRINCIPAL DE 3 COLUNAS -->
     <div class="layout-grid">
         
-        <!-- COLUNA ESQUERDA (Banner Lateral / Promo) -->
+        <!-- COLUNA ESQUERDA (Adsterra Native Banner) -->
         <aside class="side-banner">
-            <h3>Parceiros</h3>
-            <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank" class="promo-box">
-                <img src="https://cash-tzgk.onrender.com/img/banner%201.png" alt="Lucre Mais">
-                <h4>Lucre Mais Tasks</h4>
-                <p>Ganhe com robôs no Telegram</p>
-            </a>
-            <!-- Adsterra Native Banner 1:4 na Lateral Esquerda -->
+            <h3>Patrocinado</h3>
             <div style="width: 100%; overflow: hidden;">
                 <script async="async" data-cfasync="false" src="https://bauval.org/21/766882f2476c19557720418d7c2e2f3f"></script>
                 <div id="container-766882f2476c19557720418d7c2e2f3f"></div>
             </div>
         </aside>
 
-        <!-- COLUNA CENTRAL (Conteúdo principal / MoneyRain) -->
+        <!-- COLUNA CENTRAL (MoneyRain Sem Anúncios Acima) -->
         <main class="main-center">
             
-            <!-- BANNER TOPO CENTRAL (Adsterra 728x90) -->
-            <div style="display: flex; justify-content: center; width: 100%; overflow: hidden;">
-                <script>
-                    atOptions = {
-                        'key' : 'ed7ae762454c285a95afb8866129ae36',
-                        'format' : 'iframe',
-                        'height' : 90,
-                        'width' : 728,
-                        'params' : {}
-                    };
-                </script>
-                <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
-            </div>
-
             <!-- BOX DE LOGIN -->
             <div id="login-section" class="auth-box">
                 <h2 id="login-title">Bem-vindo ao Cash Rain</h2>
@@ -251,36 +217,28 @@
 
         </main>
 
-        <!-- COLUNA DIREITA (Banner Lateral / Promo) -->
+        <!-- COLUNA DIREITA (Adsterra Native Banner Igual à Esquerda) -->
         <aside class="side-banner">
-            <h3>Destaque</h3>
-            <a href="https://zerads.com/index.php?view=site&id=12423" target="_blank" class="promo-box">
-                <h4 style="color: #10b981; margin-bottom: 5px;">ZerAds Network</h4>
-                <p>Anuncie seus links e consiga tráfego real instantâneo.</p>
-            </a>
-            <!-- Espaço extra para criativos ou anúncios -->
-            <div style="padding: 10px; background: #0f172a; border-radius: 8px; width: 100%; border: 1px dashed #334155;">
-                <p style="font-size: 0.8rem; color: #94a3b8;">💡 Dica: Compartilhe seu link de indicação para lucrar em 3 níveis automaticamente.</p>
+            <h3>Patrocinado</h3>
+            <div style="width: 100%; overflow: hidden;">
+                <script async="async" data-cfasync="false" src="https://bauval.org/21/766882f2476c19557720418d7c2e2f3f"></script>
+                <div id="container-766882f2476c19557720418d7c2e2f3f"></div>
             </div>
         </aside>
 
     </div>
 
-    <!-- SEÇÃO INFERIOR EM GRID DE BANNERS (Estilo Exemplo 2) -->
+    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (5 ZerAds Centralizados um abaixo do outro) -->
     <div class="bottom-grid-section">
         <div class="ads-grid-box">
             <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
             
-            <div class="banner-flex-row">
-                <!-- Banner ZerAds Centralizado -->
+            <div class="zerads-stack">
                 <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
-            </div>
-
-            <div class="banner-flex-row">
-                <!-- Banner A-Ads Responsivo -->
-                <div id="frame" style="width: 100%; max-width: 728px; margin: auto; position: relative; z-index: 99998;">
-                    <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461304/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
-                </div>
+                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
+                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
+                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
+                <iframe src="https://zerads.com/ad/ad.php?width=728&ref=12423" marginwidth="0" marginheight="0" width="728" height="90" scrolling="no" border="0" frameborder="0" style="border:none; border-radius:8px; max-width:100%;"></iframe>
             </div>
         </div>
     </div>
