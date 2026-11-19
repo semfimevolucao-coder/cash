@@ -42,7 +42,7 @@ function obterIpCliente(req) {
 }
 
 // Valida o token diretamente no Mein-PPC pelo servidor
-async function verificarTokenMeinPPC(token, ipVisitante) {
+async function verificarTokenMeinPPC(token) {
     if (!token || typeof token !== 'string' || token.trim().length < 5) {
         return { valid: false, message: 'Token de verificação ausente ou inválido.' };
     }
@@ -51,10 +51,6 @@ async function verificarTokenMeinPPC(token, ipVisitante) {
         api: MEIN_PPC_API_KEY,
         token: token.trim()
     });
-
-    if (ipVisitante) {
-        params.append('ip', ipVisitante);
-    }
 
     const response = await fetch(`https://mein-ppc.com/api/captcha-verify.php?${params.toString()}`, {
         method: 'GET'
@@ -65,11 +61,16 @@ async function verificarTokenMeinPPC(token, ipVisitante) {
     }
 
     const data = await response.json();
+    console.log('Resposta captcha-verify.php:', data);
+
     if (data && (data.valid === true || data.válido === true)) {
         return { valid: true, raw: data };
     }
 
-    return { valid: false, message: 'Verificação do captcha não validada ou expirada.' };
+    return {
+        valid: false,
+        message: data?.error || data?.message || 'Verificação do captcha não validada ou expirada.'
+    };
 }
 
 // Middlewares
@@ -281,7 +282,6 @@ app.post('/api/confirmar-saque', async (req, res) => {
     const email = normalizarEmail(req.body.email);
     const destino = normalizarEmail(req.body.chave_pix_faucetpay || email);
     const tokenCaptcha = String(req.body.captcha_token || req.body.solve_token || '').trim();
-    const ipVisitante = obterIpCliente(req);
 
     if (!projeto || !destino) {
         return res.status(400).json({ success: false, message: 'Dados incompletos.' });
@@ -293,7 +293,7 @@ app.post('/api/confirmar-saque', async (req, res) => {
 
     let verificacao;
     try {
-        verificacao = await verificarTokenMeinPPC(tokenCaptcha, ipVisitante);
+        verificacao = await verificarTokenMeinPPC(tokenCaptcha);
     } catch (err) {
         console.error('Erro ao verificar token Mein-PPC:', err);
         return res.status(502).json({ success: false, message: 'Falha ao validar a verificação.' });
@@ -627,3 +627,6 @@ app.listen(PORT, async () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     await inicializarBanco();
 });
+```[cite: 1]
+
+Faça o deploy desse `server.js` no Render e teste solicitar saque com um usuário que tenha saldo `>= 0.01` (`MINIMO_SAQUE`); se ainda houver algum detalhe na resposta do Mein-PPC, o log `Resposta captcha-verify.php:` aparecerá nos logs do Render.
