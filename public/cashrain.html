@@ -32,6 +32,7 @@
         .balance-badge span { font-weight: bold; color: var(--accent); }
         .btn-saque { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-saque:hover { background: var(--accent-hover); }
+        .btn-saque:disabled { opacity: .65; cursor: not-allowed; }
 
         .btn-lang { background: #0f172a; color: var(--text-main); border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-lang:hover { background: #334155; }
@@ -365,6 +366,10 @@
         <p>&copy; 2026 Cash Rain. All rights reserved.</p>
     </footer>
 
+
+    <!-- Mein-PPC Captcha widget: carregado para abrir a sobreposição -->
+    <script src="https://mein-ppc.com/captcha-widget.js"></script>
+
     <!-- SCRIPT DE CARREGAMENTO DOS 5 ZERADS E FUNCIONALIDADES -->
     <script>
         document.querySelectorAll('.zerads-slot').forEach(slot => {
@@ -537,33 +542,86 @@
             setInterval(atualizarSaldo, 15000);
         }
 
+        // Mein-PPC: abre o desafio de rotação em sobreposição.
+        // IMPORTANTE: esta versão usa a chave no navegador apenas para teste.
+        // Antes de publicar, mover a criação/verificação para rotas no servidor.
+        let saqueAguardandoCaptcha = false;
+
         async function solicitarSaque() {
             const t = traducoes[currentLang];
+
             if (!currentUserEmail) {
                 alert(t.alertLoginFirst);
                 return;
             }
 
+            if (saqueAguardandoCaptcha) {
+                return;
+            }
+
+            if (!window.MeinPPCCaptcha || typeof window.MeinPPCCaptcha.show !== 'function') {
+                alert('Não foi possível carregar a verificação. Atualize a página e tente novamente.');
+                return;
+            }
+
+            saqueAguardandoCaptcha = true;
+            const botaoSaque = document.getElementById('btn-saque-text');
+            const textoOriginal = botaoSaque.innerText;
+            botaoSaque.disabled = true;
+            botaoSaque.innerText = currentLang === 'pt'
+                ? 'Aguardando verificação...'
+                : 'Waiting for verification...';
+
             try {
-                const res = await fetch('/api/solicitar-saque', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        projeto: 'cashrain',
-                        email: currentUserEmail,
-                        chave_pix_faucetpay: currentUserEmail
-                    })
+                window.MeinPPCCaptcha.show({
+                    api: '4a3eb2346df3919fa987bfda30c39e3f',
+                    url: window.location.origin + '/withdraw/callback',
+                    type: 'rotate',
+                    lang: currentLang === 'pt' ? 'en' : 'en',
+                    mode: 'callback',
+
+                    onsolve: async function(token) {
+                        try {
+                            // Esta rota será criada na próxima etapa.
+                            // Ela deverá validar o token no Mein-PPC no servidor
+                            // e somente então registrar/processar o saque.
+                            const res = await fetch('/api/confirmar-saque', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    projeto: 'cashrain',
+                                    email: currentUserEmail,
+                                    chave_pix_faucetpay: currentUserEmail,
+                                    captcha_token: token
+                                })
+                            });
+
+                            const data = await res.json();
+
+                            if (!res.ok || !data.success) {
+                                throw new Error(data.message || 'Não foi possível confirmar o saque.');
+                            }
+
+                            alert(data.message || t.alertWithdrawSuccess);
+                            atualizarSaldo();
+                        } catch (err) {
+                            console.error('Erro ao confirmar saque:', err);
+                            alert(err.message || 'Erro ao validar a verificação e solicitar o saque.');
+                        } finally {
+                            saqueAguardandoCaptcha = false;
+                            botaoSaque.disabled = false;
+                            botaoSaque.innerText = textoOriginal;
+                        }
+                    }
                 });
-                const data = await res.json();
-                alert(data.message || (data.success ? t.alertWithdrawSuccess : 'Erro ao solicitar saque.'));
-                if (data.success) {
-                    atualizarSaldo();
-                }
             } catch (err) {
-                alert('Erro de conexão ao solicitar saque.');
+                console.error('Erro ao abrir Mein-PPC:', err);
+                alert('Não foi possível abrir a verificação. Tente novamente.');
+                saqueAguardandoCaptcha = false;
+                botaoSaque.disabled = false;
+                botaoSaque.innerText = textoOriginal;
             }
         }
-
         aplicarIdioma();
 
         const urlParamsInit = new URLSearchParams(window.location.search);
