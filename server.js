@@ -15,7 +15,6 @@ function normalizarEmail(email) {
     if (!email) return '';
     let limpo = email.trim().toLowerCase();
 
-    // Se o e-mail veio sem o '@' mas é do Gmail
     if (!limpo.includes('@') && limpo.endsWith('gmail.com')) {
         let nome = limpo.replace('gmail.com', '').replace(/[^a-z0-9]/g, '');
         limpo = `${nome}@gmail.com`;
@@ -123,10 +122,15 @@ async function inicializarBanco() {
 
             CREATE TABLE IF NOT EXISTS tokens_usados (
                 token VARCHAR(255) PRIMARY KEY,
-                projeto VARCHAR(50) NOT NULL,
-                email VARCHAR(255) NOT NULL,
+                projeto VARCHAR(50) NOT NULL DEFAULT 'cashrain',
+                email VARCHAR(255) NOT NULL DEFAULT '',
                 criado_em TIMESTAMP DEFAULT NOW()
             );
+
+            ALTER TABLE tokens_usados
+                ADD COLUMN IF NOT EXISTS projeto VARCHAR(50) NOT NULL DEFAULT 'cashrain',
+                ADD COLUMN IF NOT EXISTS email VARCHAR(255) NOT NULL DEFAULT '',
+                ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP DEFAULT NOW();
 
             CREATE TABLE IF NOT EXISTS metricas_divulgacao (
                 id SERIAL PRIMARY KEY,
@@ -143,6 +147,23 @@ async function inicializarBanco() {
             CREATE INDEX IF NOT EXISTS idx_ganhos_email ON historico_ganhos(email);
             CREATE INDEX IF NOT EXISTS idx_ganhos_ref ON historico_ganhos(referencia_id);
         `);
+
+        await pool.query(`
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'tokens_usados'
+                      AND column_name = 'finalidade'
+                ) THEN
+                    ALTER TABLE tokens_usados ALTER COLUMN finalidade SET DEFAULT 'confirmar_saque';
+                    UPDATE tokens_usados SET finalidade = 'confirmar_saque' WHERE finalidade IS NULL;
+                END IF;
+            END $$;
+        `);
+
         console.log('✅ Banco de dados sincronizado com sucesso!');
     } catch (err) {
         console.error('❌ Erro ao inicializar banco de dados:', err);
@@ -310,14 +331,29 @@ app.post('/api/confirmar-saque', async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // Impede reutilização do mesmo token (replay protection)
-        const tokenInsert = await client.query(
-            `INSERT INTO tokens_usados (token, projeto, email)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (token) DO NOTHING
-             RETURNING token`,
-            [tokenCaptcha, projeto, destino]
-        );
+        const colFinalidade = await client.query(`
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'tokens_usados'
+              AND column_name = 'finalidade'
+        `);
+
+        const tokenInsert = colFinalidade.rowCount > 0
+            ? await client.query(
+                `INSERT INTO tokens_usados (token, projeto, email, finalidade)
+                 VALUES ($1, $2, $3, 'confirmar_saque')
+                 ON CONFLICT (token) DO NOTHING
+                 RETURNING token`,
+                [tokenCaptcha, projeto, destino]
+            )
+            : await client.query(
+                `INSERT INTO tokens_usados (token, projeto, email)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (token) DO NOTHING
+                 RETURNING token`,
+                [tokenCaptcha, projeto, destino]
+            );
 
         if (tokenInsert.rowCount === 0) {
             await client.query('ROLLBACK');
