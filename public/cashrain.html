@@ -109,10 +109,19 @@
             border: 1px solid #334155;
             display: flex;
             flex-direction: column;
+            align-items: center;
             gap: 20px;
             width: 100%;
         }
-        #moneyrain-iframe { width: 100%; height: 550px; border: none; border-radius: 8px; background: #0f172a; }
+        #moneyrain-iframe {
+            width: 360px;
+            max-width: 100%;
+            height: 360px;
+            border: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0f172a;
+        }
 
         /* Banner Lucre Mais Tasks Interno */
         .internal-promo-banner {
@@ -131,6 +140,7 @@
 
         /* Caixa de Indicação Organizada */
         .ref-box-container {
+            width: 100%;
             background: #0f172a;
             border: 1px solid #334155;
             padding: 18px;
@@ -235,7 +245,7 @@
             <!-- EMBED MONEYRAIN & PAINEL DE INDICAÇÃO -->
             <div id="embed-section" class="embed-container" style="display: none;">
                 <!-- Iframe oficial do MoneyRain -->
-                <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
+                <iframe id="moneyrain-iframe" src="about:blank" width="360" height="360" style="border:0;border-radius:8px;overflow:hidden" loading="lazy"></iframe>
 
                 <!-- Banner Lucre Mais Tasks ACIMA da área de indicação -->
                 <div class="internal-promo-banner">
@@ -521,7 +531,7 @@
             montarLinkIndicacao(currentUserEmail);
 
             const iframe = document.getElementById('moneyrain-iframe');
-            iframe.src = `https://moneyrain1.com/?external_uid=${encodeURIComponent(currentUserEmail)}`;
+            iframe.src = `https://offerwall.moneyrain.top/embed.php?pub=228&site=cash-tzgk.onrender.com&uid=${encodeURIComponent(currentUserEmail)}`;
 
             atualizarSaldo();
             setInterval(atualizarSaldo, 15000);
