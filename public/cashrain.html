@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">Cash Rain - Earn Crypto & USD Watching Ads</title>
+    <title id="page-title">Cash Rain - Ganhe Assistindo Anúncios</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -12,194 +12,145 @@
             --accent-hover: #059669;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --gold: #f59e0b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
 
+        /* Topbar Clean */
         header {
             background-color: var(--card-bg);
-            padding: 15px 30px;
+            padding: 15px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #334155;
+            position: sticky; top: 0; z-index: 100;
         }
-        .logo { font-size: 1.5rem; font-weight: bold; color: var(--accent); }
-        .header-right { display: flex; gap: 10px; align-items: center; }
-        .btn-lang, .btn-dashboard { background: #334155; color: var(--text-main); border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-lang:hover, .btn-dashboard:hover { background: #475569; }
+        .logo { font-size: 1.4rem; font-weight: bold; color: var(--accent); }
+        .user-stats { display: flex; align-items: center; gap: 12px; }
+        .balance-badge { background: #0f172a; padding: 8px 14px; border-radius: 20px; font-size: 0.95rem; border: 1px solid #334155; }
+        .balance-badge span { font-weight: bold; color: var(--accent); }
+        .btn-saque { background: var(--accent); color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-saque:hover { background: var(--accent-hover); }
 
-        .banner-container {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-            padding: 0 10px;
-        }
+        .btn-lang { background: #0f172a; color: var(--text-main); border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-lang:hover { background: #334155; }
 
-        .hero {
-            max-width: 800px;
-            margin: 10px auto 30px auto;
-            text-align: center;
-            padding: 0 20px;
-        }
-        .hero h1 { font-size: 2.5rem; margin-bottom: 15px; line-height: 1.2; }
-        .hero h1 span { color: var(--accent); }
-        .hero p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 25px; line-height: 1.6; }
-
-        .cta-box {
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 16px;
-            border: 1px solid #334155;
-            max-width: 480px;
-            margin: 0 auto;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-        .cta-box input {
-            width: 100%;
-            padding: 14px;
-            border-radius: 8px;
-            border: 1px solid #475569;
-            background: #0f172a;
-            color: #fff;
-            margin-bottom: 15px;
-            font-size: 1rem;
-            text-align: center;
-        }
-        .btn-cta {
-            width: 100%;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn-cta:hover { background: var(--accent-hover); }
-
-        /* PAINEL INTERNO DO USUÁRIO (Logado) */
-        .dashboard-container {
-            max-width: 700px;
-            margin: 20px auto;
-            padding: 0 20px;
-            width: 100%;
-        }
-        .balance-card {
-            background: var(--card-bg);
-            border: 1px solid #334155;
-            padding: 25px;
-            border-radius: 16px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .balance-card h2 { font-size: 2rem; color: var(--gold); margin: 10px 0; }
-
-        /* BAÚ DE RECOMPENSAS (MYSTERY BOX) */
-        .chest-box {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border: 2px dashed var(--gold);
-            padding: 20px;
-            border-radius: 16px;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-        .chest-box h3 { color: var(--gold); margin-bottom: 10px; }
-        .btn-chest {
-            background: var(--gold);
-            color: #0f172a;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: 0.2s;
-        }
-        .btn-chest:hover:not(:disabled) { background: #d97706; color: #fff; }
-        .btn-chest:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        /* SEÇÃO DE SAQUE COM PROTEÇÃO PRÉ-SAQUE */
-        .withdraw-section {
-            background: var(--card-bg);
-            border: 1px solid #334155;
-            padding: 25px;
-            border-radius: 16px;
-            margin-bottom: 30px;
-        }
-        .withdraw-section h3 { margin-bottom: 15px; color: var(--accent); }
-        .withdraw-box { display: flex; gap: 10px; flex-direction: column; }
-        .withdraw-box input {
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #475569;
-            background: #0f172a;
-            color: #fff;
-        }
-        .btn-withdraw {
-            background: #3b82f6;
-            color: #fff;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .btn-withdraw:hover:not(:disabled) { background: #2563eb; }
-        .btn-withdraw:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        /* AVISO PRÉ-SAQUE */
-        .pre-withdraw-gate {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid #ef4444;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            color: #fca5a5;
-            display: none;
-        }
-
-        .promo-section {
-            max-width: 728px;
+        /* Layout de 3 Colunas Desktop */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr 240px;
+            gap: 20px;
+            max-width: 1350px;
             margin: 20px auto;
             padding: 0 15px;
-            text-align: center;
+            width: 100%;
         }
-        .promo-section img {
+
+        /* CELULAR / TELAS PEQUENAS: Oculta as laterais e expande o centro */
+        @media (max-width: 1024px) {
+            .layout-grid {
+                grid-template-columns: 1fr;
+            }
+            .side-banner {
+                display: none !important;
+            }
+        }
+
+        /* Colunas Laterais */
+        .side-banner {
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            height: fit-content;
+        }
+        .side-banner h3 { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .side-banner img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+        .side-banner iframe {
+            max-width: 100% !important;
+        }
+
+        /* Conteúdo Central */
+        .main-center {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Box de Login Clean */
+        .auth-box {
+            background: var(--card-bg);
+            padding: 40px 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #334155;
+            width: 100%;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .auth-box input {
+            padding: 14px; width: 100%; max-width: 380px; border-radius: 8px; border: 1px solid #475569;
+            background: #0f172a; color: #fff; margin-bottom: 20px; font-size: 1rem; text-align: center;
+        }
+
+        /* Embed Container Alinhado */
+        .embed-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+        #moneyrain-iframe { width: 100%; height: 550px; border: none; border-radius: 8px; background: #0f172a; }
+
+        /* Banner Lucre Mais Tasks Interno */
+        .internal-promo-banner {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .internal-promo-banner img {
             width: 100%;
             max-width: 728px;
             height: auto;
             border-radius: 8px;
-            border: 1px solid #334155;
-            display: block;
-            margin: 0 auto;
-        }
-
-        .features {
-            max-width: 1000px;
-            margin: 30px auto;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .feature-card {
-            background: var(--card-bg);
-            padding: 25px;
-            border-radius: 12px;
+            display: inline-block;
             border: 1px solid #334155;
         }
-        .feature-card h3 { color: var(--accent); margin-bottom: 10px; font-size: 1.2rem; }
-        .feature-card p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
 
-        /* STACK DE BANNERS INFERIOR */
+        /* Caixa de Indicação Organizada */
+        .ref-box-container {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 18px;
+            border-radius: 8px;
+        }
+        .ref-box-container h4 { color: var(--accent); margin-bottom: 6px; font-size: 0.95rem; }
+        .ref-input-group { display: flex; gap: 8px; margin-top: 10px; }
+        .ref-input-group input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 0.85rem; }
+        .btn-copiar { background: #334155; color: #fff; border: none; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-copiar:hover { background: #475569; }
+        .delay-warning {
+            font-size: 0.8rem;
+            color: #f59e0b;
+            margin-top: 10px;
+        }
+
+        /* Grid de Banners Inferior */
         .bottom-grid-section {
-            max-width: 800px;
-            margin: 20px auto 40px auto;
+            max-width: 1350px;
+            margin: 10px auto 30px auto;
             padding: 0 15px;
             width: 100%;
         }
@@ -224,7 +175,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 2px;
             width: 100%;
         }
         .zerads-slot {
@@ -235,483 +186,386 @@
             justify-content: center;
             align-items: center;
         }
+        .zerads-slot iframe {
+            height: 90px !important;
+            width: 728px !important;
+            max-width: 100% !important;
+            border: none;
+            background: transparent;
+        }
 
-        footer { text-align: center; padding: 30px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid #334155; margin-top: auto; }
-        .hidden { display: none !important; }
+        footer { text-align: center; padding: 25px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid #334155; margin-top: auto; }
     </style>
 </head>
 <body>
 
+    <!-- TOPBAR -->
     <header>
         <div class="logo">☔ Cash Rain</div>
-        <div class="header-right">
-            <button class="btn-dashboard hidden" id="logout-btn" onclick="logoutUser()">Logout</button>
-            <button class="btn-lang" onclick="toggleLang()" id="lang-btn">🌐 PT</button>
+        <div class="user-stats">
+            <button class="btn-lang" onclick="alternarIdioma()" id="lang-btn">🌐 EN</button>
+            <div class="balance-badge"><span id="txt-balance">Saldo</span>: <span id="user-balance">0.00000000</span> Pts</div>
+            <button class="btn-saque" id="btn-saque-text" onclick="solicitarSaque()">Solicitar Saque</button>
         </div>
     </header>
 
-    <main>
-        <!-- BANNER ZERADS TOPO (728x90) -->
-        <div class="banner-container">
-            <div id="ZerAds728" style="display: none;"></div>
-        </div>
+    <!-- LAYOUT PRINCIPAL DE 3 COLUNAS -->
+    <div class="layout-grid">
 
-        <!-- TELA DE LOGIN / HOME PÚBLICA -->
-        <section class="hero" id="public-view">
-            <h1 id="hero-title">Get Paid to <span>Watch Ads</span> & Complete Tasks</h1>
-            <p id="hero-desc">Join Cash Rain, the ultimate micro-task platform. Earn daily rewards instantly and build your passive income with our 3-level referral commission system.</p>
-
-            <div class="cta-box">
-                <p id="cta-label" style="margin-bottom: 15px; font-weight: 500;">Enter your FaucetPay email to start:</p>
-                <input type="email" id="user-email" placeholder="your-email@faucetpay.com" required>
-                <button class="btn-cta" id="cta-btn" onclick="registerAndStart()">Start Earning Now 🚀</button>
+        <!-- COLUNA ESQUERDA (Some no celular) -->
+        <aside class="side-banner">
+            <h3>Patrocinado</h3>
+            <div style="width: 100%; overflow: hidden;">
+                <script async="async" data-cfasync="false" src="https://bauval.org/21/766882f2476c19557720418d7c2e2f3f"></script>
+                <div id="container-766882f2476c19557720418d7c2e2f3f"></div>
             </div>
-        </section>
+        </aside>
 
-        <!-- PAINEL INTERNO (Exibido apenas quando logado) -->
-        <section class="dashboard-container hidden" id="private-view">
-            <div class="balance-card">
-                <h4 id="lbl-saldo-title">Seu Saldo Disponível</h4>
-                <h2 id="user-balance">0.00000000 Points</h2>
-                <p id="lbl-total-earned" style="color: var(--text-muted); font-size: 0.9rem;">Total Ganho: 0.00000000</p>
+        <!-- COLUNA CENTRAL (Sempre visível) -->
+        <main class="main-center">
+
+            <!-- BOX DE LOGIN -->
+            <div id="login-section" class="auth-box">
+                <h2 id="login-title">Bem-vindo ao Cash Rain</h2>
+                <p id="login-desc" style="color: var(--text-muted); margin: 12px 0 20px 0;">Digite seu e-mail da FaucetPay para começar a pontuar:</p>
+                <input type="email" id="fp-email" placeholder="seu-email@faucetpay.com" required><br>
+                <button class="btn-saque" id="login-btn-text" onclick="fazerLogin()" style="width: 100%; padding: 12px;">Entrar / Começar</button>
             </div>
 
-            <!-- BAÚ DE RECOMPENSAS (MYSTERY CHEST) -->
-            <div class="chest-box">
-                <h3 id="chest-title">🎁 Baú Diário de Recompensas</h3>
-                <p id="chest-desc" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">Resolva o desafio patrocinado para abrir o baú e ganhar pontos bônus.</p>
-                <button class="btn-chest" id="chest-btn" onclick="iniciarBauRecompensa()">Abrir Baú Agora 🔓</button>
-            </div>
+            <!-- EMBED MONEYRAIN & PAINEL DE INDICAÇÃO -->
+            <div id="embed-section" class="embed-container" style="display: none;">
+                <!-- Iframe oficial do MoneyRain -->
+                <iframe id="moneyrain-iframe" src="about:blank" loading="lazy"></iframe>
 
-            <!-- ÁREA DE SAQUE COM PROTEÇÃO PRÉ-SAQUE -->
-            <div class="withdraw-section">
-                <h3 id="withdraw-title">💸 Solicitar Saque FaucetPay</h3>
-
-                <div class="pre-withdraw-gate" id="pre-withdraw-alert"></div>
-
-                <!-- Banner ZerAds dedicado na área de saque -->
-                <div style="margin-bottom: 15px; display: flex; justify-content: center;" id="withdraw-banner-gate">
-                    <div class="zerads-slot" id="gate-slot"></div>
+                <!-- Banner Lucre Mais Tasks ACIMA da área de indicação -->
+                <div class="internal-promo-banner">
+                    <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank">
+                        <img src="https://cash-tzgk.onrender.com/img/banner%201.png" alt="Lucre Mais Tasks">
+                    </a>
                 </div>
 
-                <div class="withdraw-box">
-                    <input type="text" id="withdraw-pix" placeholder="E-mail FaucetPay para recebimento">
-                    <button class="btn-withdraw" id="withdraw-btn" onclick="iniciarSaquePreGate()">Sacar para FaucetPay</button>
+                <!-- Área de Indicação -->
+                <div class="ref-box-container">
+                    <h4 id="ref-box-title">🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)</h4>
+                    <p id="ref-box-desc" style="font-size: 0.85rem; color: var(--text-muted);">Compartilhe com amigos e ganhe comissão sobre as tarefas deles!</p>
+                    <div class="ref-input-group">
+                        <input type="text" id="user-ref-link" readonly>
+                        <button class="btn-copiar" id="copy-btn-text" onclick="copiarLink()">Copiar</button>
+                    </div>
+                    <div class="delay-warning" id="delay-warning-text">
+                        ⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.
+                    </div>
                 </div>
             </div>
-        </section>
 
-        <!-- BANNER PROMOCIONAL INTERNO (Cross-Promotion) -->
-        <div class="promo-section">
-            <a href="https://t.me/lucremais_test_bot?start=1677694125" target="_blank">
-                <img src="/img/banner%201.png" alt="Lucre Mais Tasks">
-            </a>
-        </div>
+        </main>
 
-        <section class="features" id="features-section">
-            <div class="feature-card">
-                <h3 id="f1-title">⚡ Instant FaucetPay Payouts</h3>
-                <p id="f1-desc">Request your withdrawal anytime and receive your funds directly in your FaucetPay wallet with minimal fees and fast processing.</p>
-            </div>
-            <div class="feature-card">
-                <h3 id="f2-title">👥 3-Level Referral System</h3>
-                <p id="f2-desc">Multiply your earnings. Earn 5% from Level 1, 3% from Level 2, and 2% from Level 3 based on your network's completed tasks.</p>
-            </div>
-            <div class="feature-card">
-                <h3 id="f3-title">🌐 Global Offers & PTC Ads</h3>
-                <p id="f3-desc">Access high-paying offers, PTC ads, and surfing tasks updated 24/7 to guarantee endless earning opportunities.</p>
-            </div>
-        </section>
+        <!-- COLUNA DIREITA (Some no celular) -->
+        <aside class="side-banner">
+            <h3>Destaques</h3>
 
-        <!-- STACK DE MONETIZAÇÃO INFERIOR -->
-        <div class="bottom-grid-section">
-            <div class="ads-grid-box">
-                <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
-
-                <div class="zerads-stack">
-                    <div class="zerads-slot"></div>
-                    <div class="zerads-slot"></div>
-                    <div class="zerads-slot"></div>
-                    <div class="zerads-slot"></div>
-                </div>
-
-                <!-- Adsterra Banner 728x90 -->
-                <div style="width: 100%; display: flex; justify-content: center; margin-top: 2px;">
-                    <script>
-                        atOptions = {
-                            'key' : 'ed7ae762454c285a95afb8866129ae36',
-                            'format' : 'iframe',
-                            'height' : 90,
-                            'width' : 728,
-                            'params' : {}
-                        };
-                    </script>
-                    <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
-                </div>
-
-                <!-- A-Ads Adaptativo -->
-                <div style="width: 100%; max-width: 728px; margin: 2px auto 0 auto; position: relative; z-index: 99998;">
-                    <iframe data-aa='2461303' src='//acceptable.a-ads.com/2461303/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- SCRIPT DE CARREGAMENTO DOS BANNERS ZERADS MÚLTIPLOS -->
-    <script>
-        function carregarZerAdsBanners() {
-            fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
-              .then(response => response.text())
-              .then(data => {
-                const elements = document.querySelectorAll('[id="ZerAds728"]');
-                for (const element of elements) {
-                    if (element.style.display === 'none') {
+            <!-- Banner 1: ZerAds 300 -->
+            <div>
+                <script>
+                fetch('https://zerads.com/ad/ad.php?ref=12423&width=300')
+                  .then(response => response.text())
+                  .then(data => {
+                    const elements = document.querySelectorAll('[id="ZerAds300"]');
+                    for (const element of elements) {
+                        if (element.style.display === 'none') {
                         element.style.display = 'inline-block';
-                        if(!data.includes("*BLANK*")) {
-                            data = data.replace('<meta http-equiv="refresh" content="280">', '');
-                            element.innerHTML = "<iframe style='border:none;' width='728' height='90'></iframe>";
-                            element.querySelector('iframe').srcdoc = data;
+                        if (!data.includes("*BLANK*")) {
+                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
+                        element.innerHTML = "<iframe style='border:none;' width='200' height='200'></iframe>";
+                        element.querySelector('iframe').srcdoc = data;
                         } else {
-                            element.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 8px;'><div style='position: absolute; color: #999; font-size: 32px; top: 25%; left: 32%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
+                        element.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 200px; height: 200px; background-color: rgba(200, 200, 200, 0.1); position: relative;'><div style='position: absolute; color: #999; font-size: 20px; top: 40%; left: 15%; font-family: Arial; '><i>Advertise Here</i></div></div></a>";
                         }
                         break;
-                    }
-                }
-              });
-
-            document.querySelectorAll('.zerads-slot').forEach(slot => {
-                if (slot.innerHTML.trim() !== '') return;
-                fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
-                    .then(response => response.text())
-                    .then(data => {
-                        if (!data.includes("*BLANK*")) {
-                            data = data.replace('<meta http-equiv="refresh" content="280">', '');
-                            slot.innerHTML = "<iframe style='border:none; width:728px; height:90px; display:block; margin:0 auto;'></iframe>";
-                            slot.querySelector('iframe').srcdoc = data;
-                        } else {
-                            slot.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 4px;'><div style='position: absolute; color: #999; font-size: 28px; top: 30%; left: 35%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
                         }
-                    }).catch(e => {});
-            });
-        }
+                    }
+                  }).catch(e => {});
+                </script>
+                <div id="ZerAds300" style="display: none;"></div>
+            </div>
 
-        carregarZerAdsBanners();
-        setInterval(carregarZerAdsBanners, 60000);
-    </script>
+            <!-- Banner 2: Script Externo -->
+            <div>
+                <script>
+                (function(cybb){
+                var d = document,
+                    s = d.createElement('script'),
+                    l = d.currentScript || d.scripts[d.scripts.length - 1];
+                s.settings = cybb || {};
+                s.src = "\/\/quarrelsomebitter.com\/bTX\/VAs.dXG\/lL0\/Y-WccT\/Oecmm9uuUZoUKlYkvPVT\/c_2GMbj\/Q\/0fMojyUOtGNmzAYoyENsDZQFyUO\/Qr";
+                s.async = true;
+                s.referrerPolicy = 'no-referrer-when-downgrade';
+                l.parentNode.insertBefore(s, l);
+                })({})
+                </script>
+            </div>
+
+            <!-- Banner 3: LtcScrapper -->
+            <div>
+                <a href="https://ltcscrapper.com/?ref=dccd43"><img src="https://cdn.jsdelivr.net/gh/affiliateproteam/zergirls-assets@main/ltcscrapper-banner-300x250.gif" width="200" height="166" alt="LtcScrapper"></a>
+            </div>
+
+            <!-- Banner 4: EasyHits4U -->
+            <div>
+                <a href="https://www.easyhits4u.com/?ref=chensonbh763"><img src="https://www.easyhits4u.com/img/banners/125x125_1.gif" width="125" height="125" alt="EasyHits4U" border="0"/></a>
+            </div>
+        </aside>
+    </div>
+
+    <!-- SEÇÃO INFERIOR: GRID DE BANNERS (Visível em todas as telas) -->
+    <div class="bottom-grid-section">
+        <div class="ads-grid-box">
+            <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
+
+            <div class="zerads-stack">
+                <div class="zerads-slot"></div>
+                <div class="zerads-slot"></div>
+                <div class="zerads-slot"></div>
+                <div class="zerads-slot"></div>
+                <div class="zerads-slot"></div>
+            </div>
+
+            <!-- Adsterra Banner 728x90 -->
+            <div style="width: 100%; display: flex; justify-content: center; margin-top: 2px;">
+                <script>
+                    atOptions = {
+                        'key' : 'ed7ae762454c285a95afb8866129ae36',
+                        'format' : 'iframe',
+                        'height' : 90,
+                        'width' : 728,
+                        'params' : {}
+                    };
+                </script>
+                <script src="https://bauval.org/22/ed7ae762454c285a95afb8866129ae36"></script>
+            </div>
+
+            <!-- A-Ads Responsivo -->
+            <div style="width: 100%; max-width: 728px; margin: 2px auto 0 auto; position: relative; z-index: 99998;">
+                <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461304/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <p>&copy; 2026 Cash Rain. All rights reserved.</p>
     </footer>
 
+    <!-- SCRIPT DE CARREGAMENTO DOS 5 ZERADS E FUNCIONALIDADES -->
     <script>
-        // Gestão de Sessão e UTMs
-        const urlParams = new URLSearchParams(window.location.search);
-        const utmSource = urlParams.get('utm_source');
-        const utmMedium = urlParams.get('utm_medium');
-        const utmCampaign = urlParams.get('utm_campaign');
-        const refParam = urlParams.get('ref');
+        document.querySelectorAll('.zerads-slot').forEach(slot => {
+            fetch('https://zerads.com/ad/ad.php?ref=12423&width=728')
+                .then(response => response.text())
+                .then(data => {
+                    if (!data.includes("*BLANK*")) {
+                        data = data.replace('<meta http-equiv="refresh" content="280">', '');
+                        slot.innerHTML = "<iframe style='border:none; width:728px; height:90px; display:block; margin:0 auto;'></iframe>";
+                        slot.querySelector('iframe').srcdoc = data;
+                    } else {
+                        slot.innerHTML = "<a href='https://zerads.com/index.php?view=site&id=12423' target='_blank'><div style='width: 728px; height: 90px; background-color: rgba(200, 200, 200, 0.1); position: relative; border-radius: 4px;'><div style='position: absolute; color: #999; font-size: 28px; top: 30%; left: 35%; font-family: Arial;'><i>Advertise Here</i></div></div></a>";
+                    }
+                }).catch(e => {});
+        });
 
-        if (utmSource) localStorage.setItem('cashrain_utm_source', utmSource);
-        if (utmMedium) localStorage.setItem('cashrain_utm_medium', utmMedium);
-        if (utmCampaign) localStorage.setItem('cashrain_utm_campaign', utmCampaign);
-        if (refParam) localStorage.setItem('cashrain_indicado_por', refParam);
+        let currentUserEmail = '';
+        let currentLang = localStorage.getItem('cashrain_lang') || 'pt';
 
-        // Envia visualização
-        fetch('/api/registrar-metrica', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projeto: 'cashrain',
-                email_afiliado: refParam || 'sistema',
-                utm_source: utmSource || 'direto',
-                utm_medium: utmMedium || 'indefinido',
-                utm_campaign: utmCampaign || 'geral',
-                acao: 'visualizacao'
-            })
-        }).catch(e => {});
-
-        // Checar se já está logado no navegador
-        const usuarioLogado = localStorage.getItem('cashrain_email');
-        if (usuarioLogado) {
-            ativarPainelInterno(usuarioLogado);
-        }
-
-        function ativarPainelInterno(email) {
-            document.getElementById('public-view').classList.add('hidden');
-            document.getElementById('private-view').classList.remove('hidden');
-            document.getElementById('logout-btn').classList.remove('hidden');
-            const destinoSalvo = localStorage.getItem('cashrain_saque_destino');
-            document.getElementById('withdraw-pix').value = destinoSalvo || email;
-            carregarSaldo(email);
-        }
-
-        function logoutUser() {
-            localStorage.removeItem('cashrain_email');
-            localStorage.removeItem('cashrain_saque_destino');
-            window.location.href = '/cashrain';
-        }
-
-        async function carregarSaldo(email) {
-            try {
-                const res = await fetch(`/api/saldo?projeto=cashrain&email=${encodeURIComponent(email)}`);
-                const data = await res.json();
-                if (data.saldo !== undefined) {
-                    const t = dict[currentLang];
-                    document.getElementById('user-balance').innerText = `${data.saldo} Points`;
-                    document.getElementById('lbl-total-earned').innerText = `${t.totalEarnedPrefix} ${data.total_ganho}`;
-                }
-            } catch(e) {}
-        }
-
-        // Sistema de Idiomas
-        let currentLang = localStorage.getItem('cashrain_lang') || 'en';
-        const dict = {
+        const traducoes = {
+            pt: {
+                pageTitle: "Cash Rain - Ganhe Assistindo Anúncios",
+                langBtn: "🌐 EN",
+                txtBalance: "Saldo",
+                btnSaque: "Solicitar Saque",
+                loginTitle: "Bem-vindo ao Cash Rain",
+                loginDesc: "Digite seu e-mail da FaucetPay para começar a pontuar:",
+                loginPlaceholder: "seu-email@faucetpay.com",
+                loginBtn: "Entrar / Começar",
+                refBoxTitle: "🔗 Seu Link de Indicação (Ganhe em até 3 Níveis)",
+                refBoxDesc: "Compartilhe com amigos e ganhe comissão sobre as tarefas deles!",
+                copyBtn: "Copiar",
+                copiedBtn: "Copiado!",
+                delayWarning: "⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.",
+                alertEmail: "Por favor, digite um e-mail válido.",
+                alertLoginFirst: "Faça login primeiro para solicitar um saque.",
+                alertWithdrawSuccess: "Saque solicitado com sucesso! Aguarde o processamento."
+            },
             en: {
                 pageTitle: "Cash Rain - Earn Crypto & USD Watching Ads",
-                heroTitle: "Get Paid to <span>Watch Ads</span> & Complete Tasks",
-                heroDesc: "Join Cash Rain, the ultimate micro-task platform. Earn daily rewards instantly and build your passive income.",
-                ctaLabel: "Enter your FaucetPay email to start:",
-                ctaBtn: "Start Earning Now 🚀",
-                f1Title: "⚡ Instant FaucetPay Payouts",
-                f1Desc: "Request your withdrawal anytime and receive your funds directly in your FaucetPay wallet with minimal fees and fast processing.",
-                f2Title: "👥 3-Level Referral System",
-                f2Desc: "Multiply your earnings. Earn 5% from Level 1, 3% from Level 2, and 2% from Level 3 based on your network's completed tasks.",
-                f3Title: "🌐 Global Offers & PTC Ads",
-                f3Desc: "Access high-paying offers, PTC ads, and surfing tasks updated 24/7 to guarantee endless earning opportunities.",
-                placeholder: "your-email@faucetpay.com",
                 langBtn: "🌐 PT",
-                alertEmail: "Please enter a valid FaucetPay email.",
-                saldoTitle: "Available Balance",
-                totalEarnedPrefix: "Total Earned:",
-                chestTitle: "🎁 Daily Mystery Chest",
-                chestDesc: "Solve the sponsor check to open the chest and win bonus points.",
-                chestBtn: "Open Chest Now 🔓",
-                chestDone: "Chest Claimed 🔒",
-                withdrawTitle: "💸 Request FaucetPay Withdrawal",
-                withdrawPlaceholder: "FaucetPay email for payout",
-                withdrawBtn: "Withdraw to FaucetPay",
-                preWithdrawMsg: "⚠️ <b>Anti-Bot Check Required:</b> You will be redirected to complete the sponsor verification to unlock and submit your withdrawal."
-            },
-            pt: {
-                pageTitle: "Cash Rain - Ganhe Cripto e Dólar Assistindo Anúncios",
-                heroTitle: "Ganhe Dinheiro <span>Assistindo Anúncios</span> e Tarefas",
-                heroDesc: "Junte-se ao Cash Rain, a plataforma definitiva de micro-tarefas. Ganhe recompensas diárias instantaneamente.",
-                ctaLabel: "Digite seu e-mail FaucetPay para começar:",
-                ctaBtn: "Começar a Ganhar Agora 🚀",
-                f1Title: "⚡ Saques Instantâneos FaucetPay",
-                f1Desc: "Solicite seu saque a qualquer momento e receba seus fundos diretamente na sua carteira FaucetPay com rapidez.",
-                f2Title: "👥 Sistema de Indicação em 3 Níveis",
-                f2Desc: "Multiplique seus ganhos. Ganhe 5% no Nível 1, 3% no Nível 2 e 2% no Nível 3 sobre as tarefas da sua rede.",
-                f3Title: "🌐 Ofertas Globais e Anúncios PTC",
-                f3Desc: "Acesse ofertas pagas, anúncios PTC e tarefas de surf atualizadas 24 horas por dia para garantir ganhos contínuos.",
-                placeholder: "seu-email@faucetpay.com",
-                langBtn: "🌐 EN",
-                alertEmail: "Por favor, insira um e-mail válido da FaucetPay.",
-                saldoTitle: "Seu Saldo Disponível",
-                totalEarnedPrefix: "Total Ganho:",
-                chestTitle: "🎁 Baú Diário de Recompensas",
-                chestDesc: "Resolva a verificação patrocinada para abrir o baú e ganhar pontos bônus.",
-                chestBtn: "Abrir Baú Agora 🔓",
-                chestDone: "Baú Aberto 🔒",
-                withdrawTitle: "💸 Solicitar Saque FaucetPay",
-                withdrawPlaceholder: "E-mail FaucetPay para recebimento",
-                withdrawBtn: "Sacar para FaucetPay",
-                preWithdrawMsg: "⚠️ <b>Verificação Pré-Saque:</b> Você será direcionado à verificação patrocinada para liberar e concluir o saque."
+                txtBalance: "Balance",
+                btnSaque: "Request Withdraw",
+                loginTitle: "Welcome to Cash Rain",
+                loginDesc: "Enter your FaucetPay email to start earning:",
+                loginPlaceholder: "your-email@faucetpay.com",
+                loginBtn: "Login / Start",
+                refBoxTitle: "🔗 Your Referral Link (Earn up to 3 Levels)",
+                refBoxDesc: "Share with friends and earn commission on their tasks!",
+                copyBtn: "Copy",
+                copiedBtn: "Copied!",
+                delayWarning: "⏳ Earnings and commissions may take up to 5 minutes to appear in your balance due to MoneyRain server response time.",
+                alertEmail: "Please enter a valid email.",
+                alertLoginFirst: "Please login first to request a withdrawal.",
+                alertWithdrawSuccess: "Withdrawal requested successfully! Please wait for processing."
             }
         };
 
-        function applyLang() {
-            const t = dict[currentLang];
+        function aplicarIdioma() {
+            const t = traducoes[currentLang];
             document.getElementById('page-title').innerText = t.pageTitle;
-            document.getElementById('hero-title').innerHTML = t.heroTitle;
-            document.getElementById('hero-desc').innerText = t.heroDesc;
-            document.getElementById('cta-label').innerText = t.ctaLabel;
-            document.getElementById('cta-btn').innerText = t.ctaBtn;
-            document.getElementById('f1-title').innerText = t.f1Title;
-            document.getElementById('f1-desc').innerText = t.f1Desc;
-            document.getElementById('f2-title').innerText = t.f2Title;
-            document.getElementById('f2-desc').innerText = t.f2Desc;
-            document.getElementById('f3-title').innerText = t.f3Title;
-            document.getElementById('f3-desc').innerText = t.f3Desc;
-            document.getElementById('user-email').placeholder = t.placeholder;
             document.getElementById('lang-btn').innerText = t.langBtn;
-            document.getElementById('lbl-saldo-title').innerText = t.saldoTitle;
-            document.getElementById('chest-title').innerText = t.chestTitle;
-            document.getElementById('chest-desc').innerText = t.chestDesc;
-            const chestBtn = document.getElementById('chest-btn');
-            if (!chestBtn.disabled) chestBtn.innerText = t.chestBtn;
-            document.getElementById('withdraw-title').innerText = t.withdrawTitle;
-            document.getElementById('withdraw-pix').placeholder = t.withdrawPlaceholder;
-            document.getElementById('withdraw-btn').innerText = t.withdrawBtn;
-            const currentEarnedText = document.getElementById('lbl-total-earned').innerText;
-            const parts = currentEarnedText.split(':');
-            if (parts.length > 1) {
-                document.getElementById('lbl-total-earned').innerText = `${t.totalEarnedPrefix}${parts[1]}`;
-            }
+            document.getElementById('txt-balance').innerText = t.txtBalance;
+            document.getElementById('btn-saque-text').innerText = t.btnSaque;
+            document.getElementById('login-title').innerText = t.loginTitle;
+            document.getElementById('login-desc').innerText = t.loginDesc;
+            document.getElementById('fp-email').placeholder = t.loginPlaceholder;
+            document.getElementById('login-btn-text').innerText = t.loginBtn;
+            document.getElementById('ref-box-title').innerText = t.refBoxTitle;
+            document.getElementById('ref-box-desc').innerText = t.refBoxDesc;
+            document.getElementById('copy-btn-text').innerText = t.copyBtn;
+            document.getElementById('delay-warning-text').innerText = t.delayWarning;
         }
 
-        function toggleLang() {
-            currentLang = currentLang === 'en' ? 'pt' : 'en';
+        function alternarIdioma() {
+            currentLang = currentLang === 'pt' ? 'en' : 'pt';
             localStorage.setItem('cashrain_lang', currentLang);
-            applyLang();
+            aplicarIdioma();
         }
-        applyLang();
 
-        async function registerAndStart() {
-            const rawEmail = document.getElementById('user-email').value.trim();
-            const t = dict[currentLang];
-            if (!rawEmail || !rawEmail.includes('@')) {
+        function normalizarEmailFrontend(email) {
+            if (!email) return '';
+            let limpo = email.trim().toLowerCase();
+            if (!limpo.includes('@') && limpo.endsWith('gmail.com')) {
+                let nome = limpo.replace('gmail.com', '').replace(/[^a-z0-9]/g, '');
+                limpo = `${nome}@gmail.com`;
+            }
+            if (limpo.endsWith('@gmail.com') || limpo.endsWith('@googlemail.com')) {
+                let partes = limpo.split('@');
+                let usuario = partes[0].replace(/\./g, '');
+                return `${usuario}@gmail.com`;
+            }
+            return limpo;
+        }
+
+        async function atualizarSaldo() {
+            if (!currentUserEmail) return;
+            try {
+                const res = await fetch(`/api/saldo?projeto=cashrain&email=${encodeURIComponent(currentUserEmail)}`);
+                const data = await res.json();
+                if (data.saldo !== undefined) {
+                    document.getElementById('user-balance').innerText = parseFloat(data.saldo).toFixed(8);
+                }
+            } catch (e) {}
+        }
+
+        function montarLinkIndicacao(email) {
+            const baseUrl = window.location.origin;
+            const refLink = `${baseUrl}/cashrain?ref=${encodeURIComponent(email)}`;
+            document.getElementById('user-ref-link').value = refLink;
+        }
+
+        function copiarLink() {
+            const input = document.getElementById('user-ref-link');
+            const t = traducoes[currentLang];
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value).catch(() => document.execCommand('copy'));
+            const btn = document.getElementById('copy-btn-text');
+            btn.innerText = t.copiedBtn;
+            setTimeout(() => { btn.innerText = t.copyBtn; }, 2000);
+        }
+
+        async function fazerLogin() {
+            const rawEmail = document.getElementById('fp-email').value;
+            const email = normalizarEmailFrontend(rawEmail);
+            const t = traducoes[currentLang];
+
+            if (!email || !email.includes('@')) {
                 alert(t.alertEmail);
                 return;
             }
 
-            let email = rawEmail.toLowerCase();
-            if (email.endsWith('@gmail.com')) {
-                let parts = email.split('@');
-                email = parts[0].replace(/\./g, '') + '@gmail.com';
-            }
-
-            const indicadoPor = localStorage.getItem('cashrain_indicado_por') || null;
+            const urlParams = new URLSearchParams(window.location.search);
+            const indicadoPor = normalizarEmailFrontend(urlParams.get('ref') || localStorage.getItem('cashrain_indicado_por') || '');
 
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projeto: 'cashrain', email: email, indicado_por: indicadoPor })
+                    body: JSON.stringify({
+                        projeto: 'cashrain',
+                        email: email,
+                        indicado_por: indicadoPor || null
+                    })
                 });
                 const data = await res.json();
                 if (data.success) {
+                    currentUserEmail = email;
                     localStorage.setItem('cashrain_email', email);
-                    fetch('/api/registrar-metrica', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ projeto: 'cashrain', email_afiliado: indicadoPor || 'sistema', utm_source: utmSource || 'direto', utm_medium: utmMedium || 'indefinido', utm_campaign: utmCampaign || 'geral', acao: 'cadastro' })
-                    }).catch(e => {});
-                    ativarPainelInterno(email);
+                    ativarSessaoUsuario(email);
                 } else {
-                    alert(data.message || 'Error processing registration.');
+                    alert(data.message || 'Erro no login.');
                 }
             } catch (err) {
-                alert('Connection error. Please try again.');
+                alert('Erro de conexão ao realizar login.');
             }
         }
 
-        // Redireciona para o desafio hospedado no Mein-PPC e retorna com ?solve_token=...
-        async function iniciarFluxoCaptcha(acao) {
-            const email = localStorage.getItem('cashrain_email');
-            const t = dict[currentLang];
+        function ativarSessaoUsuario(email) {
+            currentUserEmail = normalizarEmailFrontend(email);
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('embed-section').style.display = 'flex';
+            montarLinkIndicacao(currentUserEmail);
 
-            if (!email) {
-                alert(t.alertEmail);
+            const iframe = document.getElementById('moneyrain-iframe');
+            iframe.src = `https://moneyrain1.com/?external_uid=${encodeURIComponent(currentUserEmail)}`;
+
+            atualizarSaldo();
+            setInterval(atualizarSaldo, 15000);
+        }
+
+        async function solicitarSaque() {
+            const t = traducoes[currentLang];
+            if (!currentUserEmail) {
+                alert(t.alertLoginFirst);
                 return;
             }
 
-            const returnUrl = `${window.location.origin}/cashrain?acao=${encodeURIComponent(acao)}`;
-
             try {
-                const res = await fetch(`/api/criar-captcha?strict=2&return_url=${encodeURIComponent(returnUrl)}`);
+                const res = await fetch('/api/solicitar-saque', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projeto: 'cashrain',
+                        email: currentUserEmail,
+                        chave_pix_faucetpay: currentUserEmail
+                    })
+                });
                 const data = await res.json();
-
-                if (data.success && (data.url || data.code)) {
-                    const destinoCaptcha = data.url || `https://mein-ppc.com/c/${data.code}`;
-                    window.location.href = destinoCaptcha;
-                } else {
-                    alert(data.message || 'Não foi possível iniciar a verificação.');
+                alert(data.message || (data.success ? t.alertWithdrawSuccess : 'Erro ao solicitar saque.'));
+                if (data.success) {
+                    atualizarSaldo();
                 }
             } catch (err) {
-                alert('Erro de conexão ao iniciar a verificação.');
+                alert('Erro de conexão ao solicitar saque.');
             }
         }
 
-        // Baú de Recompensas
-        async function iniciarBauRecompensa() {
-            const chestBtn = document.getElementById('chest-btn');
-            chestBtn.disabled = true;
-            await iniciarFluxoCaptcha('bau');
-            chestBtn.disabled = false;
+        aplicarIdioma();
+
+        const urlParamsInit = new URLSearchParams(window.location.search);
+        const refInit = urlParamsInit.get('ref');
+        if (refInit) {
+            localStorage.setItem('cashrain_indicado_por', normalizarEmailFrontend(refInit));
         }
 
-        // Trava Pré-Saque
-        async function iniciarSaquePreGate() {
-            const email = localStorage.getItem('cashrain_email');
-            const chavePix = document.getElementById('withdraw-pix').value.trim();
-            const alertBox = document.getElementById('pre-withdraw-alert');
-            const withdrawBtn = document.getElementById('withdraw-btn');
-            const t = dict[currentLang];
-
-            if (!email || !chavePix) {
-                alert(t.alertEmail);
-                return;
-            }
-
-            localStorage.setItem('cashrain_saque_destino', chavePix);
-            alertBox.style.display = 'block';
-            alertBox.innerHTML = t.preWithdrawMsg;
-
-            withdrawBtn.disabled = true;
-            await iniciarFluxoCaptcha('saque');
-            withdrawBtn.disabled = false;
+        const emailSalvo = localStorage.getItem('cashrain_email');
+        if (emailSalvo) {
+            ativarSessaoUsuario(emailSalvo);
         }
-
-        // Processa automaticamente o retorno de ?acao=...&solve_token=...
-        async function processarRetornoCaptcha() {
-            const params = new URLSearchParams(window.location.search);
-            const acao = params.get('acao');
-            const solveToken = params.get('solve_token');
-            const email = localStorage.getItem('cashrain_email');
-
-            if (!acao || !solveToken) return;
-
-            window.history.replaceState({}, '', '/cashrain');
-
-            if (!email) return;
-
-            try {
-                if (acao === 'bau') {
-                    const chestBtn = document.getElementById('chest-btn');
-                    const t = dict[currentLang];
-                    const res = await fetch('/api/bau-recompensa', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            projeto: 'cashrain',
-                            email: email,
-                            solve_token: solveToken
-                        })
-                    });
-                    const data = await res.json();
-                    alert(data.message || 'Resposta do baú recebida.');
-                    if (data.success) {
-                        carregarSaldo(email);
-                        chestBtn.disabled = true;
-                        chestBtn.innerText = t.chestDone;
-                    }
-                } else if (acao === 'saque') {
-                    const destino = localStorage.getItem('cashrain_saque_destino') || email;
-                    const res = await fetch('/api/solicitar-saque', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            projeto: 'cashrain',
-                            email: email,
-                            chave_pix_faucetpay: destino,
-                            solve_token: solveToken
-                        })
-                    });
-                    const data = await res.json();
-                    alert(data.message || 'Resposta do saque recebida.');
-                    if (data.success) {
-                        localStorage.removeItem('cashrain_saque_destino');
-                        carregarSaldo(email);
-                        document.getElementById('pre-withdraw-alert').style.display = 'none';
-                    }
-                }
-            } catch (err) {
-                alert('Erro ao validar a verificação no servidor.');
-            }
-        }
-
-        processarRetornoCaptcha();
     </script>
 </body>
 </html>
