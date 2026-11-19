@@ -8,17 +8,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.MONEYRAIN_SECRET;
 const MEIN_PPC_API_KEY = process.env.MEIN_PPC_API_KEY || '4a3eb2346df3919fa987bfda30c39e3f';
-
-// Parâmetros conservadores do Baú e Saque (ajuste conforme seu eCPM real)
-const BAU_COOLDOWN_HORAS = 6;
-const BAU_RECOMPENSA_FIXA = 0.0005; // Pequena e controlada para não gerar prejuízo
-const MINIMO_SAQUE = 0.01;
+const MINIMO_SAQUE = parseFloat(process.env.MINIMO_SAQUE || '0.01');
 
 // Função blindada para normalizar e-mails (remove pontos do gmail, lowercase, e conserta falta de @)
 function normalizarEmail(email) {
     if (!email) return '';
     let limpo = email.trim().toLowerCase();
 
+    // Se o e-mail veio sem o '@' mas é do Gmail
     if (!limpo.includes('@') && limpo.endsWith('gmail.com')) {
         let nome = limpo.replace('gmail.com', '').replace(/[^a-z0-9]/g, '');
         limpo = `${nome}@gmail.com`;
@@ -33,12 +30,46 @@ function normalizarEmail(email) {
     return limpo;
 }
 
+// Extrai o IP real do visitante considerando proxies / Render
 function obterIpCliente(req) {
-    const forwarded = req.headers['x-forwarded-for'];
-    if (forwarded) {
-        return forwarded.split(',')[0].trim();
+    const xff = req.headers['x-forwarded-for'];
+    if (xff) {
+        const primeiroIp = String(xff).split(',')[0].trim();
+        if (primeiroIp) return primeiroIp;
     }
-    return req.socket?.remoteAddress || req.ip || '';
+    const rawIp = req.ip || req.socket?.remoteAddress || '';
+    return rawIp.replace(/^::ffff:/, '');
+}
+
+// Valida o token diretamente no Mein-PPC pelo servidor
+async function verificarTokenMeinPPC(token, ipVisitante) {
+    if (!token || typeof token !== 'string' || token.trim().length < 5) {
+        return { valid: false, message: 'Token de verificação ausente ou inválido.' };
+    }
+
+    const params = new URLSearchParams({
+        api: MEIN_PPC_API_KEY,
+        token: token.trim()
+    });
+
+    if (ipVisitante) {
+        params.append('ip', ipVisitante);
+    }
+
+    const response = await fetch(`https://mein-ppc.com/api/captcha-verify.php?${params.toString()}`, {
+        method: 'GET'
+    });
+
+    if (!response.ok) {
+        return { valid: false, message: 'Falha ao consultar o serviço de verificação.' };
+    }
+
+    const data = await response.json();
+    if (data && (data.valid === true || data.válido === true)) {
+        return { valid: true, raw: data };
+    }
+
+    return { valid: false, message: 'Verificação do captcha não validada ou expirada.' };
 }
 
 // Middlewares
@@ -61,12 +92,9 @@ async function inicializarBanco() {
                 projeto VARCHAR(50) NOT NULL,
                 email VARCHAR(255) NOT NULL,
                 indicado_por VARCHAR(255),
-                ultimo_bau_em TIMESTAMP,
                 criado_em TIMESTAMP DEFAULT NOW(),
                 CONSTRAINT unique_projeto_email UNIQUE (projeto, email)
             );
-
-            ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultimo_bau_em TIMESTAMP;
 
             CREATE TABLE IF NOT EXISTS historico_ganhos (
                 id SERIAL PRIMARY KEY,
@@ -94,10 +122,20 @@ async function inicializarBanco() {
 
             CREATE TABLE IF NOT EXISTS tokens_usados (
                 token VARCHAR(255) PRIMARY KEY,
-                finalidade VARCHAR(50) NOT NULL,
-                email VARCHAR(255),
-                ip_visitante VARCHAR(100),
-                usado_em TIMESTAMP DEFAULT NOW()
+                projeto VARCHAR(50) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                criado_em TIMESTAMP DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS metricas_divulgacao (
+                id SERIAL PRIMARY KEY,
+                projeto VARCHAR(50) NOT NULL,
+                email_afiliado VARCHAR(255) NOT NULL,
+                utm_source VARCHAR(100) DEFAULT 'direto',
+                utm_medium VARCHAR(100) DEFAULT 'indefinido',
+                utm_campaign VARCHAR(100) DEFAULT 'geral',
+                acao VARCHAR(50) NOT NULL,
+                data_registro TIMESTAMP DEFAULT NOW()
             );
 
             CREATE INDEX IF NOT EXISTS idx_saques_status ON saques(status);
@@ -111,82 +149,12 @@ async function inicializarBanco() {
 }
 
 // ==========================================
-// VALIDAÇÃO SERVER-SIDE DO TOKEN MEIN-PPC
-// ==========================================
-async function validarTokenMeinPPC(token, ipVisitante) {
-    if (!token || typeof token !== 'string' || token.trim().length < 5) {
-        return { valid: false, reason: 'Token do captcha ausente.' };
-    }
-
-    const tokenLimpo = token.trim();
-    const params = new URLSearchParams({
-        api: MEIN_PPC_API_KEY,
-        token: tokenLimpo
-    });
-    if (ipVisitante) {
-        params.append('ip', ipVisitante);
-    }
-
-    const url = `https://mein-ppc.com/api/captcha-verify.php?${params.toString()}`;
-    const response = await fetch(url, { method: 'GET' });
-    if (!response.ok) {
-        return { valid: false, reason: 'Falha ao consultar verificador de captcha.' };
-    }
-
-    const data = await response.json();
-    if (!data || data.valid !== true) {
-        return { valid: false, reason: 'Token do captcha inválido ou expirado.' };
-    }
-
-    return { valid: true, data };
-}
-
-// ==========================================
 // ROTAS DE FRONTEND
 // ==========================================
 app.get('/', (req, res) => res.redirect('/cashrain'));
 app.get('/cashrain', (req, res) => res.sendFile(path.join(__dirname, 'public', 'cashrain.html')));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-
-// ==========================================
-// CRIAR DESAFIO CAPCHA NO SERVIDOR (REDIRECT OU CALLBACK)
-// ==========================================
-app.get('/api/criar-captcha', async (req, res) => {
-    const ipVisitante = obterIpCliente(req);
-    const strict = req.query.strict || '2';
-    const returnUrl = req.query.return_url;
-
-    try {
-        const params = new URLSearchParams({
-            api: MEIN_PPC_API_KEY,
-            url: returnUrl ? String(returnUrl) : 'callback',
-            strict: String(strict)
-        });
-        if (ipVisitante) {
-            params.append('uip', ipVisitante);
-        }
-
-        const resposta = await fetch(`https://mein-ppc.com/api/captcha.php?${params.toString()}`);
-        const dados = await resposta.json();
-
-        if (!dados || dados.status !== 'success' || !dados.code) {
-            return res.status(502).json({
-                success: false,
-                message: 'Não foi possível gerar o desafio de captcha.'
-            });
-        }
-
-        res.json({
-            success: true,
-            code: dados.code,
-            url: dados.url || `https://mein-ppc.com/c/${dados.code}`,
-            expires_at: dados.expires_at
-        });
-    } catch (err) {
-        console.error('Erro ao criar captcha Mein-PPC:', err);
-        res.status(500).json({ success: false, message: 'Erro interno ao criar captcha.' });
-    }
-});
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // ==========================================
 // REGISTRO / LOGIN COM ATUALIZAÇÃO DA ÁRVORE
@@ -211,9 +179,9 @@ app.post('/api/login', async (req, res) => {
         await client.query('BEGIN');
 
         await client.query(
-            `INSERT INTO usuarios (projeto, email, indicado_por) 
-             VALUES ($1, $2, $3) 
-             ON CONFLICT (projeto, email) 
+            `INSERT INTO usuarios (projeto, email, indicado_por)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (projeto, email)
              DO UPDATE SET indicado_por = EXCLUDED.indicado_por`,
             [projeto, email, indicado_por]
         );
@@ -266,116 +234,75 @@ app.get('/api/saldo', async (req, res) => {
 });
 
 // ==========================================
-// ROTA DO BAÚ DE RECOMPENSAS (COM CAPCHA VALIDADO)
+// CRIAR DESAFIO CAPCHA NO SERVIDOR
 // ==========================================
-app.post('/api/bau-recompensa', async (req, res) => {
-    const projeto = req.body.projeto || 'cashrain';
-    const email = normalizarEmail(req.body.email);
-    const solveToken = req.body.solve_token || req.body.captcha_token;
+app.get('/api/criar-captcha', async (req, res) => {
     const ipVisitante = obterIpCliente(req);
+    const strict = req.query.strict || '2';
+    const urlDestino = req.query.url || 'callback';
 
-    if (!email) {
-        return res.status(400).json({ success: false, message: 'E-mail obrigatório para abrir o baú.' });
-    }
-
-    const validacao = await validarTokenMeinPPC(solveToken, ipVisitante);
-    if (!validacao.valid) {
-        return res.status(400).json({ success: false, message: validacao.reason });
-    }
-
-    const client = await pool.connect();
     try {
-        await client.query('BEGIN');
-
-        // Garante que o token não foi reutilizado (replay protection)
-        const tokenInsert = await client.query(
-            `INSERT INTO tokens_usados (token, finalidade, email, ip_visitante, usado_em)
-             VALUES ($1, 'bau_recompensa', $2, $3, NOW())
-             ON CONFLICT (token) DO NOTHING
-             RETURNING token`,
-            [solveToken.trim(), email, ipVisitante]
-        );
-
-        if (tokenInsert.rowCount === 0) {
-            await client.query('ROLLBACK');
-            return res.status(400).json({ success: false, message: 'Este token de captcha já foi utilizado.' });
+        const params = new URLSearchParams({
+            api: MEIN_PPC_API_KEY,
+            url: String(urlDestino),
+            strict: String(strict)
+        });
+        if (ipVisitante) {
+            params.append('uip', ipVisitante);
         }
 
-        // Garante que o usuário existe e checa cooldown no servidor
-        const userRes = await client.query(
-            `SELECT ultimo_bau_em FROM usuarios WHERE projeto = $1 AND email = $2 FOR UPDATE`,
-            [projeto, email]
-        );
+        const resposta = await fetch(`https://mein-ppc.com/api/captcha.php?${params.toString()}`);
+        const dados = await resposta.json();
 
-        if (userRes.rowCount === 0) {
-            await client.query(
-                `INSERT INTO usuarios (projeto, email, indicado_por) VALUES ($1, $2, 'chensonbh763@gmail.com')`,
-                [projeto, email]
-            );
-        } else if (userRes.rows[0].ultimo_bau_em) {
-            const ultimoBau = new Date(userRes.rows[0].ultimo_bau_em).getTime();
-            const cooldownMs = BAU_COOLDOWN_HORAS * 60 * 60 * 1000;
-            const restanteMs = cooldownMs - (Date.now() - ultimoBau);
-
-            if (restanteMs > 0) {
-                const minutosRestantes = Math.ceil(restanteMs / 60000);
-                await client.query('ROLLBACK');
-                return res.json({
-                    success: false,
-                    message: `Baú em recarga. Tente novamente em ${minutosRestantes} minuto(s).`
-                });
-            }
+        if (!dados || (dados.status !== 'success' && dados.status !== 'sucesso') || !dados.code) {
+            return res.status(502).json({
+                success: false,
+                message: 'Não foi possível gerar o desafio de verificação.'
+            });
         }
 
-        const recompensa = BAU_RECOMPENSA_FIXA.toFixed(8);
-        const refId = `bau_${crypto.randomBytes(8).toString('hex')}`;
-
-        await client.query(
-            `UPDATE usuarios SET ultimo_bau_em = NOW() WHERE projeto = $1 AND email = $2`,
-            [projeto, email]
-        );
-
-        await client.query(
-            `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro)
-             VALUES ($1, $2, 'mystery_box', CAST($3 AS NUMERIC), 'Baú de Recompensas', $4, NOW())`,
-            [projeto, email, recompensa, refId]
-        );
-
-        await client.query('COMMIT');
         res.json({
             success: true,
-            recompensa: recompensa,
-            message: `Você recebeu +${recompensa} pontos no Baú de Recompensas!`
+            code: dados.code,
+            url: dados.url || `https://mein-ppc.com/c/${dados.code}`,
+            expires_at: dados.expires_at || dados.expira_em
         });
     } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Erro ao processar baú de recompensa:', err);
-        res.status(500).json({ success: false, message: 'Erro interno ao abrir o baú.' });
-    } finally {
-        client.release();
+        console.error('Erro ao criar captcha Mein-PPC:', err);
+        res.status(500).json({ success: false, message: 'Erro interno ao criar desafio.' });
     }
 });
 
 // ==========================================
-// SOLICITAÇÃO DE SAQUE (COM GATE PRÉ-SAQUE VALIDADO)
+// CONFIRMAR E REGISTRAR SAQUE APÓS CAPCHA
 // ==========================================
-app.post('/api/solicitar-saque', async (req, res) => {
-    const projeto = req.body.projeto;
+app.post('/api/confirmar-saque', async (req, res) => {
+    const projeto = (req.body.projeto || 'cashrain').trim().toLowerCase();
     const email = normalizarEmail(req.body.email);
     const destino = normalizarEmail(req.body.chave_pix_faucetpay || email);
-    const solveToken = req.body.solve_token || req.body.captcha_token;
+    const tokenCaptcha = String(req.body.captcha_token || req.body.solve_token || '').trim();
     const ipVisitante = obterIpCliente(req);
 
     if (!projeto || !destino) {
         return res.status(400).json({ success: false, message: 'Dados incompletos.' });
     }
 
-    const validacao = await validarTokenMeinPPC(solveToken, ipVisitante);
-    if (!validacao.valid) {
+    if (!tokenCaptcha) {
+        return res.status(400).json({ success: false, message: 'Token de verificação obrigatório.' });
+    }
+
+    let verificacao;
+    try {
+        verificacao = await verificarTokenMeinPPC(tokenCaptcha, ipVisitante);
+    } catch (err) {
+        console.error('Erro ao verificar token Mein-PPC:', err);
+        return res.status(502).json({ success: false, message: 'Falha ao validar a verificação.' });
+    }
+
+    if (!verificacao.valid) {
         return res.status(400).json({
             success: false,
-            requires_captcha: true,
-            message: validacao.reason || 'Resolva a verificação pré-saque para continuar.'
+            message: verificacao.message || 'Verificação inválida ou expirada.'
         });
     }
 
@@ -383,18 +310,76 @@ app.post('/api/solicitar-saque', async (req, res) => {
     try {
         await client.query('BEGIN');
 
+        // Impede reutilização do mesmo token (replay protection)
         const tokenInsert = await client.query(
-            `INSERT INTO tokens_usados (token, finalidade, email, ip_visitante, usado_em)
-             VALUES ($1, 'pre_saque', $2, $3, NOW())
+            `INSERT INTO tokens_usados (token, projeto, email)
+             VALUES ($1, $2, $3)
              ON CONFLICT (token) DO NOTHING
              RETURNING token`,
-            [solveToken.trim(), email || destino, ipVisitante]
+            [tokenCaptcha, projeto, destino]
         );
 
         if (tokenInsert.rowCount === 0) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ success: false, message: 'Token de verificação já utilizado. Resolva novamente.' });
+            return res.status(400).json({
+                success: false,
+                message: 'Este token de verificação já foi utilizado.'
+            });
         }
+
+        const resGanhos = await client.query(
+            'SELECT COALESCE(SUM(pontos), 0) as total FROM historico_ganhos WHERE projeto = $1 AND email = $2',
+            [projeto, destino]
+        );
+        const resSaques = await client.query(
+            "SELECT COALESCE(SUM(pontos_solicitados), 0) as total FROM saques WHERE projeto = $1 AND email = $2 AND status != 'rejected'",
+            [projeto, destino]
+        );
+
+        const totalGanho = parseFloat(resGanhos.rows[0].total);
+        const totalSacado = parseFloat(resSaques.rows[0].total);
+        const saldoDisponivel = Number((totalGanho - totalSacado).toFixed(8));
+
+        if (saldoDisponivel < MINIMO_SAQUE) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({
+                success: false,
+                message: `Saldo insuficiente. Mínimo para saque é ${MINIMO_SAQUE.toFixed(8)}.`
+            });
+        }
+
+        await client.query(
+            `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao)
+             VALUES ($1, $2, $3, $4, $5, 'Waiting', NOW())`,
+            [projeto, destino, saldoDisponivel, saldoDisponivel, destino]
+        );
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'Saque solicitado com sucesso! Aguarde o processamento.' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao confirmar saque:', err);
+        res.status(500).json({ success: false, message: 'Erro interno ao processar solicitação.' });
+    } finally {
+        client.release();
+    }
+});
+
+// ==========================================
+// SOLICITAÇÃO DE SAQUE (MANTIDA PARA COMPATIBILIDADE)
+// ==========================================
+app.post('/api/solicitar-saque', async (req, res) => {
+    const projeto = req.body.projeto;
+    const email = normalizarEmail(req.body.email);
+    const destino = normalizarEmail(req.body.chave_pix_faucetpay || email);
+
+    if (!projeto || !destino) {
+        return res.status(400).json({ success: false, message: 'Dados incompletos.' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
         const resGanhos = await client.query(
             'SELECT COALESCE(SUM(pontos), 0) as total FROM historico_ganhos WHERE projeto = $1 AND email = $2',
@@ -415,14 +400,13 @@ app.post('/api/solicitar-saque', async (req, res) => {
         }
 
         await client.query(
-            `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao) 
+            `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao)
              VALUES ($1, $2, $3, $4, $5, 'Waiting', NOW())`,
             [projeto, destino, saldoDisponivel, saldoDisponivel, destino]
         );
 
         await client.query('COMMIT');
-        res.json({ success: true, message: 'Verificação concluída e saque solicitado com sucesso!' });
-
+        res.json({ success: true, message: 'Saque solicitado com sucesso!' });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Erro ao solicitar saque:', err);
@@ -484,7 +468,7 @@ app.post('/api/moneyrain-callback', async (req, res) => {
 
             const ganhoLiquidoUsuario = (rewardAmount * percentualUsuario).toFixed(8);
             await client.query(
-                `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
+                `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro)
                  VALUES ('cashrain', $1, 'moneyrain', CAST($2 AS NUMERIC), $3, $4, NOW())`,
                 [emailUser, ganhoLiquidoUsuario, nomeTarefa, viewId.toString()]
             );
@@ -492,7 +476,6 @@ app.post('/api/moneyrain-callback', async (req, res) => {
             await client.query('COMMIT');
             console.log(`✅ MoneyRain Tarefa Registrada para ${emailUser} (ViewID: ${viewId})`);
             return res.status(200).send('OK');
-
         } catch (dbErr) {
             await client.query('ROLLBACK');
             console.error("🔥 Erro no Banco (MoneyRain):", dbErr);
@@ -517,12 +500,12 @@ app.get('/api/processar-comissoes', async (req, res) => {
     const client = await pool.connect();
     try {
         const pendentes = await client.query(`
-            SELECT h.email, h.pontos, h.referencia_id 
+            SELECT h.email, h.pontos, h.referencia_id
             FROM historico_ganhos h
-            WHERE h.projeto = 'cashrain' 
+            WHERE h.projeto = 'cashrain'
               AND h.origem = 'moneyrain'
               AND NOT EXISTS (
-                  SELECT 1 FROM historico_ganhos com 
+                  SELECT 1 FROM historico_ganhos com
                   WHERE com.referencia_id = h.referencia_id || '_n1'
               )
             LIMIT 100
@@ -542,7 +525,7 @@ app.get('/api/processar-comissoes', async (req, res) => {
             if (emailN1 && emailN1 !== emailUser) {
                 const comissao1 = (rewardAmount * comissaoN1).toFixed(8);
                 await client.query(
-                    `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
+                    `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro)
                      VALUES ('cashrain', $1, 'indicacao_n1', CAST($2 AS NUMERIC), 'Comissão Nível 1', $3, NOW())
                      ON CONFLICT DO NOTHING`,
                     [emailN1, comissao1, viewId + '_n1']
@@ -554,7 +537,7 @@ app.get('/api/processar-comissoes', async (req, res) => {
                 if (emailN2 && emailN2 !== emailUser && emailN2 !== emailN1) {
                     const comissao2 = (rewardAmount * comissaoN2).toFixed(8);
                     await client.query(
-                        `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
+                        `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro)
                          VALUES ('cashrain', $1, 'indicacao_n2', CAST($2 AS NUMERIC), 'Comissão Nível 2', $3, NOW())
                          ON CONFLICT DO NOTHING`,
                         [emailN2, comissao2, viewId + '_n2']
@@ -566,7 +549,7 @@ app.get('/api/processar-comissoes', async (req, res) => {
                     if (emailN3 && emailN3 !== emailUser && emailN3 !== emailN1 && emailN3 !== emailN2) {
                         const comissao3 = (rewardAmount * comissaoN3).toFixed(8);
                         await client.query(
-                            `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro) 
+                            `INSERT INTO historico_ganhos (projeto, email, origem, pontos, nome_tarefa, referencia_id, data_registro)
                              VALUES ('cashrain', $1, 'indicacao_n3', CAST($2 AS NUMERIC), 'Comissão Nível 3', $3, NOW())
                              ON CONFLICT DO NOTHING`,
                             [emailN3, comissao3, viewId + '_n3']
@@ -578,7 +561,6 @@ app.get('/api/processar-comissoes', async (req, res) => {
         }
 
         res.json({ success: true, processados: processados, mensagem: `${processados} lotes de comissões verificados e distribuídos com sucesso!` });
-
     } catch (err) {
         console.error("Erro ao processar comissões pendentes:", err);
         res.status(500).json({ success: false, error: err.message });
@@ -629,7 +611,7 @@ app.post('/api/registrar-metrica', async (req, res) => {
 
     try {
         await pool.query(
-            `INSERT INTO metricas_divulgacao (projeto, email_afiliado, utm_source, utm_medium, utm_campaign, acao, data_registro) 
+            `INSERT INTO metricas_divulgacao (projeto, email_afiliado, utm_source, utm_medium, utm_campaign, acao, data_registro)
              VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
             [projeto, emailLimpo, utm_source || 'direto', utm_medium || 'indefinido', utm_campaign || 'geral', acao]
         );
