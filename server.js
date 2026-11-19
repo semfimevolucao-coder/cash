@@ -627,6 +627,3 @@ app.listen(PORT, async () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     await inicializarBanco();
 });
-```[cite: 1]
-
-Faça o deploy desse `server.js` no Render e teste solicitar saque com um usuário que tenha saldo `>= 0.01` (`MINIMO_SAQUE`); se ainda houver algum detalhe na resposta do Mein-PPC, o log `Resposta captcha-verify.php:` aparecerá nos logs do Render.
