@@ -149,16 +149,17 @@ app.get('/cashrain', (req, res) => res.sendFile(path.join(__dirname, 'public', '
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 // ==========================================
-// CRIAR DESAFIO CAPCHA NO SERVIDOR (OPCIONAL)
+// CRIAR DESAFIO CAPCHA NO SERVIDOR (REDIRECT OU CALLBACK)
 // ==========================================
 app.get('/api/criar-captcha', async (req, res) => {
     const ipVisitante = obterIpCliente(req);
     const strict = req.query.strict || '2';
+    const returnUrl = req.query.return_url;
 
     try {
         const params = new URLSearchParams({
             api: MEIN_PPC_API_KEY,
-            url: 'callback',
+            url: returnUrl ? String(returnUrl) : 'callback',
             strict: String(strict)
         });
         if (ipVisitante) {
@@ -169,12 +170,16 @@ app.get('/api/criar-captcha', async (req, res) => {
         const dados = await resposta.json();
 
         if (!dados || dados.status !== 'success' || !dados.code) {
-            return res.status(502).json({ success: false, message: 'Não foi possível gerar o desafio de captcha.' });
+            return res.status(502).json({
+                success: false,
+                message: 'Não foi possível gerar o desafio de captcha.'
+            });
         }
 
         res.json({
             success: true,
             code: dados.code,
+            url: dados.url || `https://mein-ppc.com/c/${dados.code}`,
             expires_at: dados.expires_at
         });
     } catch (err) {
