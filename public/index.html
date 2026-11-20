@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="page-title">Cash Rain - Earn Crypto & USD Watching Ads</title>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K8T1NL1RJR"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-K8T1NL1RJR');
+    </script>
+
     <style>
         :root {
             --bg-color: #0f172a;
@@ -289,17 +299,17 @@
     </footer>
 
     <script>
-        // Captura UTMs da URL e salva no localStorage para tráfego pago
+        // Captura UTMs da URL e salva no localStorage para rastreamento e atribuição
         const urlParams = new URLSearchParams(window.location.search);
-        const utmSource = urlParams.get('utm_source');
-        const utmMedium = urlParams.get('utm_medium');
-        const utmCampaign = urlParams.get('utm_campaign');
-        const refParam = urlParams.get('ref');
+        const utmSource = urlParams.get('utm_source') || localStorage.getItem('cashrain_utm_source') || '';
+        const utmMedium = urlParams.get('utm_medium') || localStorage.getItem('cashrain_utm_medium') || '';
+        const utmCampaign = urlParams.get('utm_campaign') || localStorage.getItem('cashrain_utm_campaign') || '';
+        const refParam = urlParams.get('ref') || localStorage.getItem('cashrain_indicado_por') || '';
 
-        if (utmSource) localStorage.setItem('cashrain_utm_source', utmSource);
-        if (utmMedium) localStorage.setItem('cashrain_utm_medium', utmMedium);
-        if (utmCampaign) localStorage.setItem('cashrain_utm_campaign', utmCampaign);
-        if (refParam) localStorage.setItem('cashrain_indicado_por', refParam);
+        if (urlParams.get('utm_source')) localStorage.setItem('cashrain_utm_source', urlParams.get('utm_source'));
+        if (urlParams.get('utm_medium')) localStorage.setItem('cashrain_utm_medium', urlParams.get('utm_medium'));
+        if (urlParams.get('utm_campaign')) localStorage.setItem('cashrain_utm_campaign', urlParams.get('utm_campaign'));
+        if (urlParams.get('ref')) localStorage.setItem('cashrain_indicado_por', urlParams.get('ref'));
 
         // Dispara métrica de visualização
         fetch('/api/registrar-metrica', {
@@ -394,6 +404,7 @@
             }
 
             const indicadoPor = localStorage.getItem('cashrain_indicado_por') || null;
+            const origemAtual = utmSource || localStorage.getItem('cashrain_utm_source') || 'direto';
 
             try {
                 const res = await fetch('/api/login', {
@@ -410,20 +421,37 @@
                 if (data.success) {
                     localStorage.setItem('cashrain_email', email);
 
+                    let redirecionou = false;
+                    const irParaPainel = () => {
+                        if (!redirecionou) {
+                            redirecionou = true;
+                            window.location.href = '/cashrain';
+                        }
+                    };
+
                     fetch('/api/registrar-metrica', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             projeto: 'cashrain',
                             email_afiliado: indicadoPor || 'sistema',
-                            utm_source: utmSource || 'direto',
-                            utm_medium: utmMedium || 'indefinido',
-                            utm_campaign: utmCampaign || 'geral',
+                            utm_source: origemAtual,
+                            utm_medium: utmMedium || localStorage.getItem('cashrain_utm_medium') || 'indefinido',
+                            utm_campaign: utmCampaign || localStorage.getItem('cashrain_utm_campaign') || 'geral',
                             acao: 'cadastro'
                         })
                     }).catch(e => {});
 
-                    window.location.href = '/cashrain';
+                    if (typeof gtag === 'function') {
+                        gtag('event', 'sign_up', {
+                            method: 'faucetpay_email',
+                            source: origemAtual,
+                            event_callback: irParaPainel
+                        });
+                        setTimeout(irParaPainel, 400);
+                    } else {
+                        irParaPainel();
+                    }
                 } else {
                     alert(data.message || 'Error processing registration.');
                 }
