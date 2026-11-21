@@ -454,17 +454,13 @@ app.post('/api/solicitar-saque', async (req, res) => {
 
 app.get('/api/meu-ip-render', async (req, res) => {
   try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    if (!response.ok) {
-      return res.status(502).json({ erro: 'Falha ao consultar serviço de IP' });
-    }
+    const response = await fetch('https://api64.ipify.org?format=json');
     const data = await response.json();
-    res.json({ ip_atual_render: data.ip });
+    res.json({ ip_saida: data.ip });
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
 });
-
 
 // ==========================================
 // CALLBACK MONEYRAIN (REGISTRA GANHO PRINCIPAL)
