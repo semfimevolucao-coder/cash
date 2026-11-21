@@ -8,7 +8,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET = process.env.MONEYRAIN_SECRET;
 const MEIN_PPC_API_KEY = process.env.MEIN_PPC_API_KEY || '4a3eb2346df3919fa987bfda30c39e3f';
+const FAUCETPAY_API_KEY = process.env.FAUCETPAY_API_KEY;
+const FAUCETPAY_CURRENCY = (process.env.FAUCETPAY_CURRENCY || 'USDT').trim().toUpperCase();
+
 const MINIMO_SAQUE = parseFloat(process.env.MINIMO_SAQUE || '0.01');
+const MAX_SAQUE = parseFloat(process.env.MAX_SAQUE || '0.08');
+const TETO_GLOBAL_24H = parseFloat(process.env.TETO_GLOBAL_24H || '0.08');
+const INTERVALO_MINUTOS_USUARIO = parseInt(process.env.INTERVALO_MINUTOS_USUARIO || '15', 10);
+
+// Parâmetros de auditoria de comportamento humano (ajustáveis via .env)
+const MIN_TAREFAS_AUDITORIA = parseInt(process.env.MIN_TAREFAS_AUDITORIA || '2', 10);
+const TEMPO_MINIMO_POR_TAREFA_SEG = parseFloat(process.env.TEMPO_MINIMO_POR_TAREFA_SEG || '12');
 
 // Função blindada para normalizar e-mails (remove pontos do gmail, lowercase, e conserta falta de @)
 function normalizarEmail(email) {
@@ -69,6 +79,110 @@ async function verificarTokenMeinPPC(token) {
     return {
         valid: false,
         message: data?.error || data?.message || 'Verificação do captcha não validada ou expirada.'
+    };
+}
+
+// Audita as tarefas do usuário e avalia se a média de intervalo entre cliques/conclusões é humana
+async function auditarAtividadeHumana(client, projeto, email) {
+    const resTarefas = await client.query(
+        `SELECT id, nome_tarefa, pontos, data_registro
+         FROM historico_ganhos
+         WHERE projeto = $1 AND email = $2 AND origem = 'moneyrain'
+         ORDER BY data_registro ASC, id ASC`,
+        [projeto, email]
+    );
+
+    const tarefas = resTarefas.rows;
+    const totalTarefas = tarefas.length;
+
+    if (totalTarefas < MIN_TAREFAS_AUDITORIA) {
+        return {
+            aprovado: false,
+            motivo: `Histórico insuficiente para liberação automática (${totalTarefas}/${MIN_TAREFAS_AUDITORIA} tarefas).`
+        };
+    }
+
+    if (totalTarefas >= 2) {
+        let somaIntervalosSeg = 0;
+        let paresContados = 0;
+
+        for (let i = 1; i < tarefas.length; i++) {
+            const anterior = new Date(tarefas[i - 1].data_registro).getTime();
+            const atual = new Date(tarefas[i].data_registro).getTime();
+            if (Number.isFinite(anterior) && Number.isFinite(atual) && atual >= anterior) {
+                somaIntervalosSeg += (atual - anterior) / 1000;
+                paresContados++;
+            }
+        }
+
+        if (paresContados > 0) {
+            const mediaSegundos = somaIntervalosSeg / paresContados;
+            if (mediaSegundos < TEMPO_MINIMO_POR_TAREFA_SEG) {
+                return {
+                    aprovado: false,
+                    motivo: `Ritmo de conclusão abaixo do esperado (${mediaSegundos.toFixed(1)}s por tarefa).`
+                };
+            }
+        }
+    }
+
+    return {
+        aprovado: true,
+        motivo: 'Auditoria de atividades e ritmo humano aprovada.'
+    };
+}
+
+// Envia pagamento instantâneo via FaucetPay Merchant API (valor convertido para satoshis 10^8)
+async function enviarPagamentoFaucetPay(destino, valorMoeda, moeda = FAUCETPAY_CURRENCY) {
+    if (!FAUCETPAY_API_KEY) {
+        return {
+            ok: false,
+            motivo: 'FAUCETPAY_API_KEY não configurada no ambiente.'
+        };
+    }
+
+    const satoshis = Math.round(Number(valorMoeda) * 1e8);
+    if (!Number.isFinite(satoshis) || satoshis < 1) {
+        return {
+            ok: false,
+            motivo: 'Valor inválido para conversão em satoshis.'
+        };
+    }
+
+    const params = new URLSearchParams();
+    params.append('api_key', FAUCETPAY_API_KEY);
+    params.append('amount', String(satoshis));
+    params.append('to', destino);
+    params.append('currency', moeda);
+
+    const fpResp = await fetch('https://faucetpay.io/api/v1/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params.toString()
+    });
+
+    const rawText = await fpResp.text();
+    let fpData;
+    try {
+        fpData = JSON.parse(rawText);
+    } catch {
+        fpData = { raw: rawText };
+    }
+
+    if (fpResp.ok && fpData && fpData.status === 200) {
+        return {
+            ok: true,
+            comprovante: fpData.payout_id ? String(fpData.payout_id) : 'FAUCETPAY_OK',
+            raw: fpData
+        };
+    }
+
+    return {
+        ok: false,
+        motivo: fpData?.message || fpData?.error || `Falha API FaucetPay (HTTP ${fpResp.status})`,
+        raw: fpData
     };
 }
 
@@ -296,7 +410,7 @@ app.get('/api/criar-captcha', async (req, res) => {
 });
 
 // ==========================================
-// CONFIRMAR E REGISTRAR SAQUE APÓS CAPCHA
+// CONFIRMAR SAQUE: CAPCHA -> AUDITORIA -> PAGAMENTO AUTOMÁTICO OU FILA
 // ==========================================
 app.post('/api/confirmar-saque', async (req, res) => {
     const projeto = (req.body.projeto || 'cashrain').trim().toLowerCase();
@@ -312,6 +426,7 @@ app.post('/api/confirmar-saque', async (req, res) => {
         return res.status(400).json({ success: false, message: 'Token de verificação obrigatório.' });
     }
 
+    // 1. Valida captcha Mein-PPC no servidor
     let verificacao;
     try {
         verificacao = await verificarTokenMeinPPC(tokenCaptcha);
@@ -328,9 +443,18 @@ app.post('/api/confirmar-saque', async (req, res) => {
     }
 
     const client = await pool.connect();
+    let saqueId = null;
+    let saldoDisponivel = 0;
+    let liberarAutomatico = false;
+    let motivoFilaManual = '';
+
     try {
         await client.query('BEGIN');
 
+        // Trava de concorrência por projeto + destinatário
+        await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`saque_${projeto}_${destino}`]);
+
+        // Impede reuso do mesmo token de captcha
         const colFinalidade = await client.query(`
             SELECT 1
             FROM information_schema.columns
@@ -363,6 +487,28 @@ app.post('/api/confirmar-saque', async (req, res) => {
             });
         }
 
+        // Verifica intervalo mínimo entre solicitações do mesmo usuário
+        const resUltimoSaque = await client.query(
+            `SELECT data_solicitacao FROM saques
+             WHERE projeto = $1 AND email = $2 AND status IN ('Paid', 'Processing', 'Waiting')
+             ORDER BY data_solicitacao DESC LIMIT 1`,
+            [projeto, destino]
+        );
+
+        if (resUltimoSaque.rows.length > 0) {
+            const ultimo = new Date(resUltimoSaque.rows[0].data_solicitacao);
+            const diffMinutos = (Date.now() - ultimo.getTime()) / 60000;
+            if (diffMinutos < INTERVALO_MINUTOS_USUARIO) {
+                await client.query('ROLLBACK');
+                const faltam = Math.ceil(INTERVALO_MINUTOS_USUARIO - diffMinutos);
+                return res.status(429).json({
+                    success: false,
+                    message: `Aguarde ${faltam} minuto(s) para solicitar um novo saque.`
+                });
+            }
+        }
+
+        // Calcula saldo real disponível
         const resGanhos = await client.query(
             'SELECT COALESCE(SUM(pontos), 0) as total FROM historico_ganhos WHERE projeto = $1 AND email = $2',
             [projeto, destino]
@@ -374,7 +520,7 @@ app.post('/api/confirmar-saque', async (req, res) => {
 
         const totalGanho = parseFloat(resGanhos.rows[0].total);
         const totalSacado = parseFloat(resSaques.rows[0].total);
-        const saldoDisponivel = Number((totalGanho - totalSacado).toFixed(8));
+        saldoDisponivel = Number((totalGanho - totalSacado).toFixed(8));
 
         if (saldoDisponivel < MINIMO_SAQUE) {
             await client.query('ROLLBACK');
@@ -384,20 +530,98 @@ app.post('/api/confirmar-saque', async (req, res) => {
             });
         }
 
-        await client.query(
-            `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao)
-             VALUES ($1, $2, $3, $4, $5, 'Waiting', NOW())`,
-            [projeto, destino, saldoDisponivel, saldoDisponivel, destino]
+        // 2. Auditoria de atividades e ritmo humano
+        const auditoria = await auditarAtividadeHumana(client, projeto, destino);
+
+        // Verifica teto máximo por saque e teto global em 24h (1440 min)
+        const resTotal24h = await client.query(
+            `SELECT COALESCE(SUM(valor_solicitado), 0) as total_24h FROM saques
+             WHERE projeto = $1 AND status IN ('Paid', 'Processing')
+             AND data_solicitacao >= NOW() - INTERVAL '1440 minutes'`,
+            [projeto]
         );
+        const totalPago24h = parseFloat(resTotal24h.rows[0].total_24h);
+
+        if (!auditoria.aprovado) {
+            liberarAutomatico = false;
+            motivoFilaManual = auditoria.motivo;
+        } else if (saldoDisponivel > MAX_SAQUE) {
+            liberarAutomatico = false;
+            motivoFilaManual = `Acima do teto automático por saque (${MAX_SAQUE}).`;
+        } else if ((totalPago24h + saldoDisponivel) > TETO_GLOBAL_24H) {
+            liberarAutomatico = false;
+            motivoFilaManual = `Teto global de ${TETO_GLOBAL_24H} em 24h atingido.`;
+        } else {
+            liberarAutomatico = true;
+        }
+
+        const statusInicial = liberarAutomatico ? 'Processing' : 'Waiting';
+        const obsInicial = liberarAutomatico ? null : motivoFilaManual.slice(0, 100);
+
+        const insertRes = await client.query(
+            `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao, comprovante)
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
+             RETURNING id`,
+            [projeto, destino, saldoDisponivel, saldoDisponivel, destino, statusInicial, obsInicial]
+        );
+        saqueId = insertRes.rows[0].id;
 
         await client.query('COMMIT');
-        res.json({ success: true, message: 'Saque solicitado com sucesso! Aguarde o processamento.' });
     } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Erro ao confirmar saque:', err);
-        res.status(500).json({ success: false, message: 'Erro interno ao processar solicitação.' });
+        await client.query('ROLLBACK').catch(() => {});
+        console.error('Erro na transação de confirmação de saque:', err);
+        return res.status(500).json({ success: false, message: 'Erro interno ao processar solicitação.' });
     } finally {
         client.release();
+    }
+
+    // Se não passou na auditoria ou nos tetos automáticos, permanece em 'Waiting' para revisão manual
+    if (!liberarAutomatico) {
+        return res.json({
+            success: true,
+            status: 'Waiting',
+            message: 'Saque registrado e enviado para validação/pagamento (Waiting).'
+        });
+    }
+
+    // 3. Dispara pagamento automático via FaucetPay fora do lock transacional
+    try {
+        const envio = await enviarPagamentoFaucetPay(destino, saldoDisponivel, FAUCETPAY_CURRENCY);
+
+        if (envio.ok) {
+            await pool.query(
+                "UPDATE saques SET status = 'Paid', data_aprovacao = NOW(), comprovante = $1 WHERE id = $2",
+                [envio.comprovante.slice(0, 100), saqueId]
+            );
+            return res.json({
+                success: true,
+                status: 'Paid',
+                comprovante: envio.comprovante,
+                message: 'Saque aprovado e pago instantaneamente!'
+            });
+        }
+
+        await pool.query(
+            "UPDATE saques SET status = 'Waiting', comprovante = $1 WHERE id = $2",
+            [`AUTO_FALLBACK: ${envio.motivo}`.slice(0, 100), saqueId]
+        );
+        return res.json({
+            success: true,
+            status: 'Waiting',
+            message: 'Saque auditado e colocado em fila de processamento (Waiting).'
+        });
+    } catch (err) {
+        console.error('Erro ao enviar pagamento automático FaucetPay:', err);
+        await pool.query(
+            "UPDATE saques SET status = 'Waiting', comprovante = $1 WHERE id = $2",
+            ['AUTO_FALLBACK: Erro de rede na API'.slice(0, 100), saqueId]
+        ).catch(() => {});
+
+        return res.json({
+            success: true,
+            status: 'Waiting',
+            message: 'Saque registrado e colocado em fila de processamento (Waiting).'
+        });
     }
 });
 
@@ -450,102 +674,6 @@ app.post('/api/solicitar-saque', async (req, res) => {
     } finally {
         client.release();
     }
-});
-
-app.get('/api/meu-ip-render', async (req, res) => {
-  try {
-    const response = await fetch('https://api64.ipify.org?format=json');
-    const data = await response.json();
-    res.json({ ip_saida: data.ip });
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
-});
-
-// Rota temporária para testar envio real via FaucetPay saindo do servidor Render
-app.post('/api/teste-pagamento-faucetpay', async (req, res) => {
-  try {
-    const tokenRecebido = req.headers['x-test-token'];
-    const tokenEsperado = process.env.ADMIN_TEST_TOKEN;
-
-    if (!tokenEsperado || tokenRecebido !== tokenEsperado) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token de teste inválido ou não configurado no servidor.'
-      });
-    }
-
-    const apiKey = process.env.FAUCETPAY_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({
-        success: false,
-        message: 'FAUCETPAY_API_KEY não encontrada nas variáveis de ambiente do Render.'
-      });
-    }
-
-    const destino = String(req.body.to || '').trim();
-    const currency = String(req.body.currency || 'USDT').trim().toUpperCase();
-    const amountMoeda = Number(req.body.amount);
-
-    if (!destino || !Number.isFinite(amountMoeda) || amountMoeda <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Informe destinatário válido e quantidade maior que zero.'
-      });
-    }
-
-    // Trava extra no teste para evitar envio acidental de valor alto
-    if (amountMoeda > 0.01) {
-      return res.status(400).json({
-        success: false,
-        message: 'Limite de segurança da rota de teste: máximo 0.01 por envio.'
-      });
-    }
-
-    // Converte unidade da moeda para satoshis (10^8)
-    const amountSatoshis = Math.round(amountMoeda * 1e8);
-    if (amountSatoshis < 1) {
-      return res.status(400).json({
-        success: false,
-        message: 'Valor muito pequeno após conversão para satoshis.'
-      });
-    }
-
-    const params = new URLSearchParams();
-    params.append('api_key', apiKey);
-    params.append('amount', String(amountSatoshis));
-    params.append('to', destino);
-    params.append('currency', currency);
-
-    const fpResp = await fetch('https://faucetpay.io/api/v1/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: params.toString()
-    });
-
-    const rawText = await fpResp.text();
-    let fpData;
-    try {
-      fpData = JSON.parse(rawText);
-    } catch {
-      fpData = { raw: rawText };
-    }
-
-    return res.status(fpResp.status).json({
-      success: fpData && fpData.status === 200,
-      sent_satoshis: amountSatoshis,
-      faucetpay_response: fpData
-    });
-  } catch (err) {
-    console.error('Erro na rota de teste FaucetPay:', err);
-    return res.status(500).json({
-      success: false,
-      message: 'Erro interno ao chamar a API da FaucetPay.',
-      error: err.message
-    });
-  }
 });
 
 // ==========================================
