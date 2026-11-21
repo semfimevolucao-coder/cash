@@ -215,7 +215,7 @@
         <div class="logo">☔ Cash Rain</div>
         <div class="user-stats">
             <button class="btn-lang" onclick="alternarIdioma()" id="lang-btn">🌐 EN</button>
-            <div class="balance-badge"><span id="txt-balance">Saldo</span>: <span id="user-balance">0.00000000</span> Pts</div>
+            <div class="balance-badge"><span id="txt-balance">Saldo</span>: <span id="user-balance">0.00000000</span> <span id="txt-pts">Pts</span></div>
             <button class="btn-saque" id="btn-saque-text" onclick="solicitarSaque()">Solicitar Saque</button>
         </div>
     </header>
@@ -225,7 +225,7 @@
 
         <!-- COLUNA ESQUERDA (Some no celular) -->
         <aside class="side-banner">
-            <h3>Patrocinado</h3>
+            <h3 id="txt-left-title">Patrocinado</h3>
             <div style="width: 100%; overflow: hidden;">
                 <script async="async" data-cfasync="false" src="https://bauval.org/21/766882f2476c19557720418d7c2e2f3f"></script>
                 <div id="container-766882f2476c19557720418d7c2e2f3f"></div>
@@ -273,7 +273,7 @@
 
         <!-- COLUNA DIREITA (Some no celular) -->
         <aside class="side-banner">
-            <h3>Destaques</h3>
+            <h3 id="txt-right-title">Destaques</h3>
 
             <!-- Banner 1: ZerAds 300 -->
             <div>
@@ -331,15 +331,15 @@
     <!-- SEÇÃO INFERIOR: GRID DE BANNERS (Visível em todas as telas) -->
     <div class="bottom-grid-section">
         <div class="ads-grid-box">
-            <span class="ads-grid-title">Publicidade & Rede de Parceiros</span>
-   
+            <span class="ads-grid-title" id="txt-bottom-title">Publicidade & Rede de Parceiros</span>
+
             <!-- Mein-PPC Banner 728x90 -->
-                <div style="width: 100%; max-width: 728px; margin: 2px auto; overflow-x: auto; text-align: center;">
-                    <script src="https://mein-ppc.com/api/rotation?token=d9d1162904049539dcf736d1787b658a&uid=1530&sid=141&typ=leaderboardview&f=728x90"></script>
-                </div>
-            
-             <!-- aidzap -->
-           <div style="width: 100%; max-width: 728px; margin: 2px auto 0 auto; position: relative; z-index: 99998;">
+            <div style="width: 100%; max-width: 728px; margin: 2px auto; overflow-x: auto; text-align: center;">
+                <script src="https://mein-ppc.com/api/rotation?token=d9d1162904049539dcf736d1787b658a&uid=1530&sid=141&typ=leaderboardview&f=728x90"></script>
+            </div>
+
+            <!-- aidzap -->
+            <div style="width: 100%; max-width: 728px; margin: 2px auto 0 auto; position: relative; z-index: 99998;">
                 <iframe src="https://aidzap.com/ad/4168345e-9c3b-401a-8f30-71850bf4c345" width="728" height="90" scrolling="no" frameborder="0" style="border:none; width:100%; max-width:728px; height:90px; display:block; margin:0 auto;"></iframe>
             </div>
 
@@ -361,7 +361,7 @@
             <div style="width: 100%; max-width: 728px; margin: 2px auto 0 auto; position: relative; z-index: 99998;">
                 <iframe data-aa='2461304' src='//acceptable.a-ads.com/2461304/?size=Adaptive' style='border:0; padding:0; width:100%; height:auto; min-height:90px; overflow:hidden; display:block; margin:auto'></iframe>
             </div>
-            
+
             <div class="zerads-stack">
                 <div class="zerads-slot"></div>
                 <div class="zerads-slot"></div>
@@ -369,17 +369,14 @@
                 <div class="zerads-slot"></div>
                 <div class="zerads-slot"></div>
             </div>
-
-            
         </div>
     </div>
 
     <footer>
-        <p>&copy; 2026 Cash Rain. All rights reserved.</p>
+        <p id="txt-footer">&copy; 2026 Cash Rain. All rights reserved.</p>
     </footer>
 
-
-    <!-- Mein-PPC Captcha widget: carregado para abrir a sobreposição -->
+    <!-- Mein-PPC Captcha widget -->
     <script src="https://mein-ppc.com/captcha-widget.js"></script>
 
     <!-- SCRIPT DE CARREGAMENTO DOS 5 ZERADS E FUNCIONALIDADES -->
@@ -406,7 +403,12 @@
                 pageTitle: "Cash Rain - Ganhe Assistindo Anúncios",
                 langBtn: "🌐 EN",
                 txtBalance: "Saldo",
+                txtPts: "Pts",
                 btnSaque: "Solicitar Saque",
+                btnWaitingCaptcha: "Aguardando verificação...",
+                leftTitle: "Patrocinado",
+                rightTitle: "Destaques",
+                bottomTitle: "Publicidade & Rede de Parceiros",
                 loginTitle: "Bem-vindo ao Cash Rain",
                 loginDesc: "Digite seu e-mail da FaucetPay para começar a pontuar:",
                 loginPlaceholder: "seu-email@faucetpay.com",
@@ -416,15 +418,27 @@
                 copyBtn: "Copiar",
                 copiedBtn: "Copiado!",
                 delayWarning: "⏳ Os ganhos e comissões podem levar até 5 minutos para aparecer no saldo devido ao tempo de resposta do servidor da MoneyRain.",
+                footerText: "© 2026 Cash Rain. Todos os direitos reservados.",
                 alertEmail: "Por favor, digite um e-mail válido.",
+                alertLoginError: "Erro no login.",
+                alertConnectionError: "Erro de conexão ao realizar login.",
                 alertLoginFirst: "Faça login primeiro para solicitar um saque.",
-                alertWithdrawSuccess: "Saque solicitado com sucesso! Aguarde o processamento."
+                alertCaptchaUnavailable: "Não foi possível carregar a verificação. Atualize a página e tente novamente.",
+                alertConfirmFailed: "Não foi possível confirmar o saque.",
+                alertWithdrawSuccess: "Saque solicitado com sucesso! Aguarde o processamento.",
+                alertWithdrawError: "Erro ao validar a verificação e solicitar o saque.",
+                alertOpenCaptchaError: "Não foi possível abrir a verificação. Tente novamente."
             },
             en: {
                 pageTitle: "Cash Rain - Earn Crypto & USD Watching Ads",
                 langBtn: "🌐 PT",
                 txtBalance: "Balance",
+                txtPts: "Pts",
                 btnSaque: "Request Withdraw",
+                btnWaitingCaptcha: "Waiting for verification...",
+                leftTitle: "Sponsored",
+                rightTitle: "Featured",
+                bottomTitle: "Advertising & Partner Network",
                 loginTitle: "Welcome to Cash Rain",
                 loginDesc: "Enter your FaucetPay email to start earning:",
                 loginPlaceholder: "your-email@faucetpay.com",
@@ -434,18 +448,32 @@
                 copyBtn: "Copy",
                 copiedBtn: "Copied!",
                 delayWarning: "⏳ Earnings and commissions may take up to 5 minutes to appear in your balance due to MoneyRain server response time.",
+                footerText: "© 2026 Cash Rain. All rights reserved.",
                 alertEmail: "Please enter a valid email.",
+                alertLoginError: "Login error.",
+                alertConnectionError: "Connection error while logging in.",
                 alertLoginFirst: "Please login first to request a withdrawal.",
-                alertWithdrawSuccess: "Withdrawal requested successfully! Please wait for processing."
+                alertCaptchaUnavailable: "Could not load verification. Refresh the page and try again.",
+                alertConfirmFailed: "Could not confirm withdrawal.",
+                alertWithdrawSuccess: "Withdrawal requested successfully! Please wait for processing.",
+                alertWithdrawError: "Error validating verification and requesting withdrawal.",
+                alertOpenCaptchaError: "Could not open verification. Please try again."
             }
         };
 
         function aplicarIdioma() {
             const t = traducoes[currentLang];
+            document.documentElement.lang = currentLang === 'pt' ? 'pt-BR' : 'en';
             document.getElementById('page-title').innerText = t.pageTitle;
             document.getElementById('lang-btn').innerText = t.langBtn;
             document.getElementById('txt-balance').innerText = t.txtBalance;
-            document.getElementById('btn-saque-text').innerText = t.btnSaque;
+            document.getElementById('txt-pts').innerText = t.txtPts;
+            if (!saqueAguardandoCaptcha) {
+                document.getElementById('btn-saque-text').innerText = t.btnSaque;
+            }
+            document.getElementById('txt-left-title').innerText = t.leftTitle;
+            document.getElementById('txt-right-title').innerText = t.rightTitle;
+            document.getElementById('txt-bottom-title').innerText = t.bottomTitle;
             document.getElementById('login-title').innerText = t.loginTitle;
             document.getElementById('login-desc').innerText = t.loginDesc;
             document.getElementById('fp-email').placeholder = t.loginPlaceholder;
@@ -454,6 +482,7 @@
             document.getElementById('ref-box-desc').innerText = t.refBoxDesc;
             document.getElementById('copy-btn-text').innerText = t.copyBtn;
             document.getElementById('delay-warning-text').innerText = t.delayWarning;
+            document.getElementById('txt-footer').innerText = t.footerText;
         }
 
         function alternarIdioma() {
@@ -534,10 +563,10 @@
                     localStorage.setItem('cashrain_email', email);
                     ativarSessaoUsuario(email);
                 } else {
-                    alert(data.message || 'Erro no login.');
+                    alert(data.message || t.alertLoginError);
                 }
             } catch (err) {
-                alert('Erro de conexão ao realizar login.');
+                alert(t.alertConnectionError);
             }
         }
 
@@ -554,9 +583,6 @@
             setInterval(atualizarSaldo, 15000);
         }
 
-        // Mein-PPC: abre o desafio de rotação em sobreposição.
-        // IMPORTANTE: esta versão usa a chave no navegador apenas para teste.
-        // Antes de publicar, mover a criação/verificação para rotas no servidor.
         let saqueAguardandoCaptcha = false;
 
         async function solicitarSaque() {
@@ -572,31 +598,32 @@
             }
 
             if (!window.MeinPPCCaptcha || typeof window.MeinPPCCaptcha.show !== 'function') {
-                alert('Não foi possível carregar a verificação. Atualize a página e tente novamente.');
+                alert(t.alertCaptchaUnavailable);
                 return;
             }
 
             saqueAguardandoCaptcha = true;
             const botaoSaque = document.getElementById('btn-saque-text');
-            const textoOriginal = botaoSaque.innerText;
+            const textoOriginal = t.btnSaque;
             botaoSaque.disabled = true;
-            botaoSaque.innerText = currentLang === 'pt'
-                ? 'Aguardando verificação...'
-                : 'Waiting for verification...';
+            botaoSaque.innerText = t.btnWaitingCaptcha;
+
+            const restaurarBotao = () => {
+                saqueAguardandoCaptcha = false;
+                botaoSaque.disabled = false;
+                botaoSaque.innerText = traducoes[currentLang].btnSaque || textoOriginal;
+            };
 
             try {
                 window.MeinPPCCaptcha.show({
                     api: '4a3eb2346df3919fa987bfda30c39e3f',
                     url: window.location.origin + '/withdraw/callback',
                     type: 'rotate',
-                    lang: currentLang === 'pt' ? 'en' : 'en',
+                    lang: currentLang === 'pt' ? 'pt' : 'en',
                     mode: 'callback',
 
                     onsolve: async function(token) {
                         try {
-                            // Esta rota será criada na próxima etapa.
-                            // Ela deverá validar o token no Mein-PPC no servidor
-                            // e somente então registrar/processar o saque.
                             const res = await fetch('/api/confirmar-saque', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -611,29 +638,26 @@
                             const data = await res.json();
 
                             if (!res.ok || !data.success) {
-                                throw new Error(data.message || 'Não foi possível confirmar o saque.');
+                                throw new Error(data.message || t.alertConfirmFailed);
                             }
 
                             alert(data.message || t.alertWithdrawSuccess);
                             atualizarSaldo();
                         } catch (err) {
                             console.error('Erro ao confirmar saque:', err);
-                            alert(err.message || 'Erro ao validar a verificação e solicitar o saque.');
+                            alert(err.message || t.alertWithdrawError);
                         } finally {
-                            saqueAguardandoCaptcha = false;
-                            botaoSaque.disabled = false;
-                            botaoSaque.innerText = textoOriginal;
+                            restaurarBotao();
                         }
                     }
                 });
             } catch (err) {
                 console.error('Erro ao abrir Mein-PPC:', err);
-                alert('Não foi possível abrir a verificação. Tente novamente.');
-                saqueAguardandoCaptcha = false;
-                botaoSaque.disabled = false;
-                botaoSaque.innerText = textoOriginal;
+                alert(t.alertOpenCaptchaError);
+                restaurarBotao();
             }
         }
+
         aplicarIdioma();
 
         const urlParamsInit = new URLSearchParams(window.location.search);
