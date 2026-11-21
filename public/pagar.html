@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Pagamento Manual Multi-Moedas - FaucetPay</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; background: #f4f6f8; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2 { color: #2a8f43; text-align: center; margin-bottom: 20px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+    input[type="text"], input[type="password"], select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background-color: #fff; }
+    button { background: #2a8f43; color: white; padding: 12px; width: 100%; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    button:hover { background: #1e6e34; }
+    .info { background: #e3f2fd; color: #0d47a1; padding: 10px; border-radius: 4px; font-size: 13px; margin-bottom: 15px; }
+    .ip-box { background: #fff3e0; color: #e65100; padding: 10px; border-radius: 4px; font-size: 13px; margin-bottom: 20px; font-weight: bold; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h2>💎 Envio Manual FaucetPay</h2>
+  
+  <div class="ip-box">
+    🌐 Seu IP Atual (Para Lista Branca): <span id="meuIp">Carregando IP...</span>
+  </div>
+
+  <div class="info">
+    ℹ️ <strong>Dica de Segurança:</strong> Copie o IP acima e adicione-o na <em>Lista Branca de IPs</em> da FaucetPay. Gere uma nova Chave de API antes de iniciar os pagamentos.
+  </div>
+
+  <!-- Formulário com tratamento dinâmico de moedas e conversão para Satoshis -->
+  <form id="paymentForm" action="https://faucetpay.io/api/v1/send" method="POST" target="_blank">
+    
+    <div class="form-group">
+      <label for="api_key">Chave de API (Merchant API Key):</label>
+      <input type="password" id="api_key" name="api_key" placeholder="Cole a chave recém-gerada aqui" required>
+    </div>
+
+    <div class="form-group">
+      <label for="to">E-mail ou Username FaucetPay do Destinatário:</label>
+      <input type="text" id="to" name="to" placeholder="ex: usuario@email.com ou nome" required>
+    </div>
+
+    <!-- SELECIONADOR DE MOEDA -->
+    <div class="form-group">
+      <label for="currencySelect">Selecionar Moeda de Envio:</label>
+      <select id="currencySelect">
+        <option value="LTC" selected>Litecoin (LTC)</option>
+        <option value="USDT">Tether TRC20 / BEP20 (USDT)</option>
+        <option value="BTC">Bitcoin (BTC)</option>
+        <option value="DOGE">Dogecoin (DOGE)</option>
+        <option value="TRX">TRON (TRX)</option>
+        <option value="BCH">Bitcoin Cash (BCH)</option>
+        <option value="DASH">Dash (DASH)</option>
+        <option value="DGB">DigiByte (DGB)</option>
+        <option value="ETH">Ethereum (ETH)</option>
+        <option value="FEY">Feyorra (FEY)</option>
+        <option value="ZEC">Zcash (ZEC)</option>
+        <option value="BNB">Binance Coin (BNB)</option>
+        <option value="SOL">Solana (SOL)</option>
+        <option value="XRP">Ripple (XRP)</option>
+        <option value="MATIC">Polygon (MATIC)</option>
+        <option value="ADA">Cardano (ADA)</option>
+        <option value="TON">Toncoin (TON)</option>
+      </select>
+    </div>
+
+    <!-- CAMPO DE VALOR DINÂMICO -->
+    <div class="form-group">
+      <label for="amountInput" id="amountLabel">Quantidade em LTC:</label>
+      <input type="text" id="amountInput" placeholder="Ex: 0.00003000" required>
+      
+      <!-- Campo oculto que envia o valor real em satoshis/unidades exigido pela FaucetPay -->
+      <input type="hidden" id="amount" name="amount">
+      <small style="color: #666; font-size: 11px;">⚠️ Digite o valor direto na moeda selecionada. O sistema converte automaticamente para satoshis ($10^8$).</small>
+    </div>
+
+    <!-- Campo enviado para a API com o código da moeda selecionada -->
+    <input type="hidden" id="currency" name="currency" value="LTC">
+
+    <button type="submit">🚀 Confirmar e Enviar Pagamento</button>
+
+  </form>
+
+  <script>
+    // Puxa automaticamente o IP público da máquina
+    fetch('https://api.ipify.org?format=json')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('meuIp').innerText = data.ip;
+      })
+      .catch(err => {
+        document.getElementById('meuIp').innerText = "Não foi possível carregar o IP";
+      });
+
+    const currencySelect = document.getElementById('currencySelect');
+    const amountLabel = document.getElementById('amountLabel');
+    const currencyInput = document.getElementById('currency');
+
+    // Atualiza a label e o input oculto ao trocar a moeda no dropdown
+    currencySelect.addEventListener('change', function() {
+      const selectedCurrency = this.value;
+      amountLabel.innerText = `Quantidade em ${selectedCurrency}:`;
+      currencyInput.value = selectedCurrency;
+    });
+
+    // Converte o valor digitado na moeda selecionada para Satoshis/Unidades (10^8) no envio
+    document.getElementById('paymentForm').addEventListener('submit', function(e) {
+      let rawInput = document.getElementById('amountInput').value.trim();
+      
+      // Substitui vírgula por ponto caso o usuário digite com vírgula (ex: 1,5 -> 1.5)
+      rawInput = rawInput.replace(',', '.');
+      
+      let valorCrypto = parseFloat(rawInput);
+      const selectedCurrency = currencySelect.value;
+
+      if (isNaN(valorCrypto) || valorCrypto <= 0) {
+        alert(`Por favor, insira um valor em ${selectedCurrency} válido.`);
+        e.preventDefault(); // Impede o envio se o valor for inválido
+        return;
+      }
+
+      // Multiplica por 100.000.000 (8 casas decimais) conforme o padrão de satoshis da API da FaucetPay
+      let satoshis = Math.round(valorCrypto * 100000000);
+
+      // Atualiza o valor do campo oculto 'amount'
+      document.getElementById('amount').value = satoshis;
+    });
+  </script>
+
+</body>
+</html>
