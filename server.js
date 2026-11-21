@@ -462,6 +462,92 @@ app.get('/api/meu-ip-render', async (req, res) => {
   }
 });
 
+// Rota temporária para testar envio real via FaucetPay saindo do servidor Render
+app.post('/api/teste-pagamento-faucetpay', async (req, res) => {
+  try {
+    const tokenRecebido = req.headers['x-test-token'];
+    const tokenEsperado = process.env.ADMIN_TEST_TOKEN;
+
+    if (!tokenEsperado || tokenRecebido !== tokenEsperado) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token de teste inválido ou não configurado no servidor.'
+      });
+    }
+
+    const apiKey = process.env.FAUCETPAY_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        message: 'FAUCETPAY_API_KEY não encontrada nas variáveis de ambiente do Render.'
+      });
+    }
+
+    const destino = String(req.body.to || '').trim();
+    const currency = String(req.body.currency || 'USDT').trim().toUpperCase();
+    const amountMoeda = Number(req.body.amount);
+
+    if (!destino || !Number.isFinite(amountMoeda) || amountMoeda <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Informe destinatário válido e quantidade maior que zero.'
+      });
+    }
+
+    // Trava extra no teste para evitar envio acidental de valor alto
+    if (amountMoeda > 0.01) {
+      return res.status(400).json({
+        success: false,
+        message: 'Limite de segurança da rota de teste: máximo 0.01 por envio.'
+      });
+    }
+
+    // Converte unidade da moeda para satoshis (10^8)
+    const amountSatoshis = Math.round(amountMoeda * 1e8);
+    if (amountSatoshis < 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valor muito pequeno após conversão para satoshis.'
+      });
+    }
+
+    const params = new URLSearchParams();
+    params.append('api_key', apiKey);
+    params.append('amount', String(amountSatoshis));
+    params.append('to', destino);
+    params.append('currency', currency);
+
+    const fpResp = await fetch('https://faucetpay.io/api/v1/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
+    });
+
+    const rawText = await fpResp.text();
+    let fpData;
+    try {
+      fpData = JSON.parse(rawText);
+    } catch {
+      fpData = { raw: rawText };
+    }
+
+    return res.status(fpResp.status).json({
+      success: fpData && fpData.status === 200,
+      sent_satoshis: amountSatoshis,
+      faucetpay_response: fpData
+    });
+  } catch (err) {
+    console.error('Erro na rota de teste FaucetPay:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno ao chamar a API da FaucetPay.',
+      error: err.message
+    });
+  }
+});
+
 // ==========================================
 // CALLBACK MONEYRAIN (REGISTRA GANHO PRINCIPAL)
 // ==========================================
