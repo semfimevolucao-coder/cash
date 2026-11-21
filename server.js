@@ -11,7 +11,11 @@ const MEIN_PPC_API_KEY = process.env.MEIN_PPC_API_KEY || '4a3eb2346df3919fa987bf
 const FAUCETPAY_API_KEY = process.env.FAUCETPAY_API_KEY;
 const FAUCETPAY_CURRENCY = (process.env.FAUCETPAY_CURRENCY || 'USDT').trim().toUpperCase();
 
-const MINIMO_SAQUE = parseFloat(process.env.MINIMO_SAQUE || '0.01');
+// Conversão: 99 Pontos = 1 USDT
+const PONTOS_POR_USDT = parseFloat(process.env.PONTOS_POR_USDT || '99');
+
+// Mínimo em PONTOS e tetos/limites em USDT
+const MINIMO_SAQUE_PONTOS = parseFloat(process.env.MINIMO_SAQUE_PONTOS || process.env.MINIMO_SAQUE || '0.01');
 const MAX_SAQUE = parseFloat(process.env.MAX_SAQUE || '0.08');
 const TETO_GLOBAL_24H = parseFloat(process.env.TETO_GLOBAL_24H || '0.08');
 const INTERVALO_MINUTOS_USUARIO = parseInt(process.env.INTERVALO_MINUTOS_USUARIO || '15', 10);
@@ -19,6 +23,11 @@ const INTERVALO_MINUTOS_USUARIO = parseInt(process.env.INTERVALO_MINUTOS_USUARIO
 // Parâmetros de auditoria de comportamento humano (ajustáveis via .env)
 const MIN_TAREFAS_AUDITORIA = parseInt(process.env.MIN_TAREFAS_AUDITORIA || '2', 10);
 const TEMPO_MINIMO_POR_TAREFA_SEG = parseFloat(process.env.TEMPO_MINIMO_POR_TAREFA_SEG || '12');
+
+function converterPontosParaUsdt(pontos) {
+    const divisor = Number.isFinite(PONTOS_POR_USDT) && PONTOS_POR_USDT > 0 ? PONTOS_POR_USDT : 99;
+    return Number((Number(pontos) / divisor).toFixed(8));
+}
 
 // Função blindada para normalizar e-mails (remove pontos do gmail, lowercase, e conserta falta de @)
 function normalizarEmail(email) {
@@ -444,7 +453,8 @@ app.post('/api/confirmar-saque', async (req, res) => {
 
     const client = await pool.connect();
     let saqueId = null;
-    let saldoDisponivel = 0;
+    let pontosDisponiveis = 0;
+    let valorUsdtDisponivel = 0;
     let liberarAutomatico = false;
     let motivoFilaManual = '';
 
@@ -508,7 +518,7 @@ app.post('/api/confirmar-saque', async (req, res) => {
             }
         }
 
-        // Calcula saldo real disponível
+        // Calcula saldo real disponível em pontos e converte para USDT (99 pontos = 1 USDT)
         const resGanhos = await client.query(
             'SELECT COALESCE(SUM(pontos), 0) as total FROM historico_ganhos WHERE projeto = $1 AND email = $2',
             [projeto, destino]
@@ -520,20 +530,21 @@ app.post('/api/confirmar-saque', async (req, res) => {
 
         const totalGanho = parseFloat(resGanhos.rows[0].total);
         const totalSacado = parseFloat(resSaques.rows[0].total);
-        saldoDisponivel = Number((totalGanho - totalSacado).toFixed(8));
+        pontosDisponiveis = Number(Math.max(0, totalGanho - totalSacado).toFixed(8));
+        valorUsdtDisponivel = converterPontosParaUsdt(pontosDisponiveis);
 
-        if (saldoDisponivel < MINIMO_SAQUE) {
+        if (pontosDisponiveis < MINIMO_SAQUE_PONTOS) {
             await client.query('ROLLBACK');
             return res.status(400).json({
                 success: false,
-                message: `Saldo insuficiente. Mínimo para saque é ${MINIMO_SAQUE.toFixed(8)}.`
+                message: `Saldo insuficiente. Mínimo para saque é ${MINIMO_SAQUE_PONTOS.toFixed(8)} pontos.`
             });
         }
 
         // 2. Auditoria de atividades e ritmo humano
         const auditoria = await auditarAtividadeHumana(client, projeto, destino);
 
-        // Verifica teto máximo por saque e teto global em 24h (1440 min)
+        // Verifica teto máximo por saque e teto global em 24h (1440 min) em USDT
         const resTotal24h = await client.query(
             `SELECT COALESCE(SUM(valor_solicitado), 0) as total_24h FROM saques
              WHERE projeto = $1 AND status IN ('Paid', 'Processing')
@@ -545,12 +556,12 @@ app.post('/api/confirmar-saque', async (req, res) => {
         if (!auditoria.aprovado) {
             liberarAutomatico = false;
             motivoFilaManual = auditoria.motivo;
-        } else if (saldoDisponivel > MAX_SAQUE) {
+        } else if (valorUsdtDisponivel > MAX_SAQUE) {
             liberarAutomatico = false;
-            motivoFilaManual = `Acima do teto automático por saque (${MAX_SAQUE}).`;
-        } else if ((totalPago24h + saldoDisponivel) > TETO_GLOBAL_24H) {
+            motivoFilaManual = `Acima do teto automático por saque (${MAX_SAQUE} USDT).`;
+        } else if ((totalPago24h + valorUsdtDisponivel) > TETO_GLOBAL_24H) {
             liberarAutomatico = false;
-            motivoFilaManual = `Teto global de ${TETO_GLOBAL_24H} em 24h atingido.`;
+            motivoFilaManual = `Teto global de ${TETO_GLOBAL_24H} USDT em 24h atingido.`;
         } else {
             liberarAutomatico = true;
         }
@@ -562,7 +573,7 @@ app.post('/api/confirmar-saque', async (req, res) => {
             `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao, comprovante)
              VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
              RETURNING id`,
-            [projeto, destino, saldoDisponivel, saldoDisponivel, destino, statusInicial, obsInicial]
+            [projeto, destino, pontosDisponiveis, valorUsdtDisponivel, destino, statusInicial, obsInicial]
         );
         saqueId = insertRes.rows[0].id;
 
@@ -584,9 +595,9 @@ app.post('/api/confirmar-saque', async (req, res) => {
         });
     }
 
-    // 3. Dispara pagamento automático via FaucetPay fora do lock transacional
+    // 3. Dispara pagamento automático via FaucetPay fora do lock transacional usando o valor convertido em USDT
     try {
-        const envio = await enviarPagamentoFaucetPay(destino, saldoDisponivel, FAUCETPAY_CURRENCY);
+        const envio = await enviarPagamentoFaucetPay(destino, valorUsdtDisponivel, FAUCETPAY_CURRENCY);
 
         if (envio.ok) {
             await pool.query(
@@ -652,17 +663,18 @@ app.post('/api/solicitar-saque', async (req, res) => {
 
         const totalGanho = parseFloat(resGanhos.rows[0].total);
         const totalSacado = parseFloat(resSaques.rows[0].total);
-        const saldoDisponivel = totalGanho - totalSacado;
+        const pontosDisponiveis = Number(Math.max(0, totalGanho - totalSacado).toFixed(8));
+        const valorUsdtDisponivel = converterPontosParaUsdt(pontosDisponiveis);
 
-        if (saldoDisponivel < MINIMO_SAQUE) {
+        if (pontosDisponiveis < MINIMO_SAQUE_PONTOS) {
             await client.query('ROLLBACK');
-            return res.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${MINIMO_SAQUE}.` });
+            return res.json({ success: false, message: `Saldo insuficiente. Mínimo para saque é ${MINIMO_SAQUE_PONTOS.toFixed(8)} pontos.` });
         }
 
         await client.query(
             `INSERT INTO saques (projeto, email, pontos_solicitados, valor_solicitado, chave_pix, status, data_solicitacao)
              VALUES ($1, $2, $3, $4, $5, 'Waiting', NOW())`,
-            [projeto, destino, saldoDisponivel, saldoDisponivel, destino]
+            [projeto, destino, pontosDisponiveis, valorUsdtDisponivel, destino]
         );
 
         await client.query('COMMIT');
